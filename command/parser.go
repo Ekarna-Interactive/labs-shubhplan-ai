@@ -47,7 +47,7 @@ func Parse(input string) ParsedInput {
 	argsString := strings.TrimSpace(strings.TrimPrefix(trimmed, parts[0]))
 
 	switch cmdToken {
-	case "/generate", "/design", "/create":
+	case "/generate", "/design", "/create", "/gen", "/genrate":
 		return parseGenerateInput(argsString)
 
 	case "/refine", "/edit", "/modify":
@@ -58,7 +58,7 @@ func Parse(input string) ParsedInput {
 			Args:         parts[1:],
 		}
 
-	case "/suggest", "/suggestion", "/theme", "/ideas":
+	case "/suggest", "/suggestion", "/theme", "/ideas", "/sug":
 		return ParsedInput{
 			Type:         CmdSuggest,
 			RawInput:     input,
@@ -66,7 +66,7 @@ func Parse(input string) ParsedInput {
 			Args:         parts[1:],
 		}
 
-	case "/style", "/aesthetic", "/preset":
+	case "/style", "/aesthetic", "/preset", "/sty":
 		return ParsedInput{
 			Type:         CmdStyle,
 			RawInput:     input,
@@ -90,7 +90,7 @@ func Parse(input string) ParsedInput {
 			Args:         parts[1:],
 		}
 
-	case "/reset", "/restart", "/new":
+	case "/reset", "/restart", "/new", "/rest", "/rst":
 		return ParsedInput{
 			Type:     CmdReset,
 			RawInput: input,

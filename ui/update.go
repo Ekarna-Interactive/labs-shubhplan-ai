@@ -474,6 +474,19 @@ func (m Model) handleParsedCommand(parsed command.ParsedInput) (Model, tea.Cmd) 
   • /help (Show this reference guide)`
 			m.Logs = append(m.Logs, LogEntry{Sender: "SYSTEM", Text: helpText})
 			return m, nil
+
+		default:
+			fields := strings.Fields(parsed.RawInput)
+			cmdToken := parsed.RawInput
+			if len(fields) > 0 {
+				cmdToken = fields[0]
+			}
+			m.Logs = append(m.Logs, LogEntry{
+				Sender:  "WARNING",
+				Text:    fmt.Sprintf("Unknown command '%s'. Type /help to view available commands, or /reset to restart setup.", cmdToken),
+				IsError: true,
+			})
+			return m, nil
 		}
 	}
 

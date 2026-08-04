@@ -21,6 +21,9 @@ output/
 *.jpg
 *.jpeg
 
+# Local user profiles & session state
+event_details.md
+
 # OS & IDE metadata
 .DS_Store
 Thumbs.db
