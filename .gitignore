@@ -1,0 +1,29 @@
+# Shubh CLI - Git Ignore Configuration
+
+# Environment secrets (Contains API Keys)
+.env
+.env.*
+!.env.example
+
+# Compiled binaries & executables
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+shubh-cli
+shubh-cli.exe
+
+# Output generated design assets
+/output/
+output/
+*.png
+*.jpg
+*.jpeg
+
+# OS & IDE metadata
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
