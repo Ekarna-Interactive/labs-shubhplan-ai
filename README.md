@@ -43,11 +43,9 @@ An open-source, standalone terminal application and conversational prompt interf
 
 ---
 
-## 🔒 Intellectual Property (IP) Architecture
+## 🚀 Architecture & Platform Roadmap
 
-Shubh CLI utilizes the **Community vs. Enterprise Abstraction Pattern**:
-* **Community Open-Source Impl (`generator/basic_builder.go`)**: Included in this open-source repository. Implements the `PromptBuilder` interface to generate clean, high-fidelity single-resolution (1:1 standard) design prompts.
-* **Enterprise Private SaaS Impl (`agents-adk/agents/builder.go`)**: Retained strictly in private production environments. Compiles 3-viewport resolution variations (4:5 Social, 9:16 Mobile, 16:9 Desktop) with strict 3-line typography legibility plates and progressive disclosure skill templates.
+Shubh CLI is the open-source terminal application for AI event design. The main Shubh web application and platform are currently under active development, featuring enhanced agentic AI workflows, multi-viewport rendering engines, and collaborative design suites.
 
 ---
 
@@ -78,7 +76,7 @@ go build -o shubh-cli.exe main.go
 ```
 
 * **Interactive Setup**: On your first launch, if `GEMINI_API_KEY` is not detected, Shubh CLI prompts you interactively to enter your key (Generate your free key at [Google AI Studio](https://aistudio.google.com/api-keys)):
-  * **Paste Key**: Pasting your Gemini API Key automatically persists it to a local `.env` file (`GEMINI_API_KEY="AIzaSy..."`) for all future runs.
+  * **Paste Key**: Pasting your Gemini API Key automatically persists it to a local `.env` file (`GEMINI_API_KEY="your_gemini_api_key_here"`) for all future runs.
   * **Skip (Press Enter)**: Pressing Enter skips setup and runs in offline dry-run mode.
 * **Manage API Key Anytime**: You can inspect or update your API key inside the TUI at any time using `/config <your-key>` or `/key <your-key>`.
 
@@ -103,7 +101,7 @@ You can configure the active image generation model in two ways:
 1. **Environment Configuration (`.env`)**:
    Add `GEMINI_IMAGE_MODEL` to your local `.env` file:
    ```env
-   GEMINI_API_KEY="AIzaSy..."
+   GEMINI_API_KEY="your_gemini_api_key_here"
    GEMINI_IMAGE_MODEL="imagen-3.0-generate-002"
    ```
 
