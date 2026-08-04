@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shubh CLI - Live Asset Preview</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <style>
+        :root {
+            --pico-font-family-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --primary-gold: #D4AF37;
+        }
+        body {
+            background-color: #0d0f17;
+            color: #e2e8f0;
+            padding: 2rem 1rem;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #1e293b;
+            padding-bottom: 1rem;
+        }
+        .header-title {
+            color: var(--primary-gold);
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 0.25rem;
+            letter-spacing: -0.025em;
+        }
+        .header-subtitle {
+            color: #94a3b8;
+            font-size: 0.95rem;
+        }
+        .card-container {
+            max-width: 720px;
+            margin: 0 auto;
+            background: #161926;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+        }
+        .preview-img-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #080a10;
+            border: 1px solid #2d3748;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            min-height: 300px;
+        }
+        .preview-img {
+            max-width: 100%;
+            height: auto;
+            max-height: 85vh;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        .preview-img:hover {
+            transform: scale(1.015);
+        }
+        .badge {
+            display: inline-block;
+            background: rgba(212, 175, 55, 0.15);
+            color: var(--primary-gold);
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+        .meta-box {
+            background: #0f121d;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        .meta-label {
+            color: #64748b;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.2rem;
+        }
+        .meta-val {
+            color: #f1f5f9;
+            font-size: 0.95rem;
+            font-weight: 500;
+            word-break: break-word;
+        }
+        .btn-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+        .btn-gold {
+            background-color: var(--primary-gold);
+            border-color: var(--primary-gold);
+            color: #000;
+            font-weight: 700;
+        }
+        .btn-gold:hover {
+            background-color: #b89628;
+            border-color: #b89628;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <main class="container">
+        <header>
+            <div class="header-title">✨ Shubh CLI Web Preview</div>
+            <div class="header-subtitle">Live Open-Source Design Asset Viewer</div>
+        </header>
+
+        <div class="card-container">
+            <span class="badge">{{ .Aspect }} Standard Resolution</span>
+            
+            {{ if .ImagePath }}
+                <div class="preview-img-wrapper">
+                    <a href="/asset?path={{ .ImagePath }}" target="_blank" title="Click to view full uncropped image">
+                        <img src="/asset?path={{ .ImagePath }}" alt="Generated Invitation Design" class="preview-img" />
+                    </a>
+                </div>
+            {{ else }}
+                <div style="text-align: center; padding: 4rem 1rem; color: #64748b;">
+                    <h3>🎨 No Image Generated Yet</h3>
+                    <p>Execute <code>/generate [details]</code> in your Shubh CLI terminal to preview rendered assets here.</p>
+                </div>
+            {{ end }}
+
+            <div class="meta-box">
+                <div class="meta-label">Active Event / Prompt Details</div>
+                <div class="meta-val">{{ .DisplayTitle }}</div>
+            </div>
+
+            {{ if .WelcomeMessage }}
+            <div class="meta-box">
+                <div class="meta-label">Welcome Message Subheader</div>
+                <div class="meta-val">{{ .WelcomeMessage }}</div>
+            </div>
+            {{ end }}
+
+            {{ if .CorePrompt }}
+            <div class="meta-box">
+                <div class="meta-label">Compiled Gemini Model Prompt</div>
+                <div class="meta-val" style="font-family: monospace; font-size: 0.85rem; color: #cbd5e1;">{{ .CorePrompt }}</div>
+            </div>
+            {{ end }}
+
+            <div class="btn-group">
+                {{ if .ImagePath }}
+                    <a href="/asset?path={{ .ImagePath }}" download class="outline role-button btn-gold" style="text-align: center; text-decoration: none; width: 100%;">📥 Download High-Res Image</a>
+                {{ end }}
+            </div>
+        </div>
+    </main>
+</body>
+</html>
