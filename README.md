@@ -21,25 +21,27 @@ An open-source, standalone terminal application and conversational prompt interf
 
 ## 🌟 Key Features
 
-* **Guided 3-Step Design Wizard**:
+* **Guided 4-Step Design Wizard**:
   1. **API Key Verification**: Prompt on launch if missing, persist to local `.env`, or run in offline dry-run mode.
-  2. **Event Details**: Prompt for Event Type, Host/Couple Names, Date, and Location.
-  3. **Style Selection**: Choose from 7 curated design aesthetics (South Indian Traditional, Paper Cut Art, Clay 3D, Pop Art, Mughal Palace, Minimalist Gold Foil, Loose Watercolor, or custom).
-  4. **Prompt Options**: Generate 4 AI prompt suggestions (`/suggest`) or enter a custom prompt.
-  5. **Generate & Preview**: Render high-fidelity invitation PNG, save to `./output`, and launch the web preview in browser (`http://localhost:3000`).
-* **Persistent Event Profile (`event_details.md`)**: Automatically saves your event details (Event Type, Host Names, Date, Location) to `event_details.md` on first input. On subsequent launches, Shubh CLI automatically loads your active event profile and skips straight to style selection! Manage or update anytime with `/event <new_details>`.
-* **Unified Slash Commands**:
-  * `/generate [details]` (Alias `/design`): Compiles clean prompts, triggers AI image models, saves rendered PNGs locally, and opens the live web preview.
-  * `/event [details]` (Alias `/details`): View or update your active event details saved in `event_details.md`.
-  * `/style [name/number]` (Alias `/aesthetic`): Select an aesthetic design style (e.g. `/style paper cut`).
-  * `/suggest [theme]` (Alias `/ideas`): Generates 4 tailored AI prompt suggestions.
-  * `/refine [changes]` (Alias `/edit`): Applies variation layers to active design prompts.
-  * `/reset` (Alias `/restart`): Restart the guided setup wizard from Step 1.
-  * `/preview`: Manually launches or opens the local web browser preview.
-  * `/config [key]`: Inspect or set your Gemini API key from [Google AI Studio](https://aistudio.google.com/api-keys).
-  * `/help`: Displays interactive command shortcuts.
+  2. **Event Details**: Prompt for Event Type, Host/Couple Names, Date, and Location (persisted to `event_details.md`).
+  3. **Target Image Resolution / Aspect Ratio**: Choose from 4 canvas layouts: `9:16` Mobile Story/Poster, `4:5` Social Feed/Portrait, `1:1` Square Card, or `16:9` Desktop Banner.
+  4. **Design Style Selection**: Choose from 7 curated aesthetic presets (South Indian Traditional, Paper Cut Art, Clay 3D Render, Pop Art, Mughal Palace, Minimalist Gold Foil, Loose Watercolor) or type a custom style.
+  5. **AI Prompt Suggestions**: Generate 4 live Gemini API prompt suggestions (`/suggest`) or enter a custom prompt. Option 5 (`5` / `more` / `r`) generates 4 brand-new suggestions anytime.
+  6. **Generate & Preview**: Render high-fidelity invitation PNG, save asset to `./output`, and launch live web preview in default browser (`http://localhost:3000`).
+* **Persistent Event Profile (`event_details.md`)**: Automatically saves your event profile (Event Details, Target Aspect Ratio) to `event_details.md`. On subsequent runs, Shubh CLI loads your active profile and skips straight to style selection.
+* **Direct Step Navigation Slash Commands**:
+  * `/generate [details]` (Alias `/design`): Compiles clean prompt with mandatory card text instructions, triggers AI image models, saves rendered PNGs locally, and opens the live web preview.
+  * `/event [details]` (Alias `/details`, `/profile`): View or update event details, or type `/event` without parameters to jump directly to the Event Details setup step.
+  * `/aspect [ratio]` (Alias `/resolution`, `/res`, `/ratio`): Set resolution (`9:16`, `4:5`, `1:1`, `16:9`), or type `/aspect` without parameters to jump directly to the Aspect Ratio step menu.
+  * `/style [name/number]` (Alias `/aesthetic`, `/preset`): Set aesthetic design style, or type `/style` without parameters to jump directly to the Design Style menu view.
+  * `/suggest [theme]` (Alias `/ideas`): Generates 4 live AI prompt suggestions using Gemini LLM agents (`gemini-3.5-flash` / `gemini-2.5-flash`) enforcing 100% strict style isolation.
+  * `/refine [changes]` (Alias `/edit`, `/modify`): Applies variation layers to active design prompts.
+  * `/reset` (Alias `/restart`, `/new`): Restart the guided setup wizard from Step 1.
+  * `/preview` (Alias `/web`, `/open`): Manually launch or open local web browser preview (`http://localhost:3000`).
+  * `/config [key]` (Alias `/key`, `/apikey`): Inspect or set your Gemini API key from [Google AI Studio](https://aistudio.google.com/api-keys).
+  * `/help` (Alias `/h`, `/?`): Displays interactive command shortcuts manual.
+* **Scrollable Terminal Viewport**: Full mouse wheel and keyboard scrolling (`PageUp`, `PageDown`, `Up`, `Down`, `Home`, `End`) through long prompt suggestions and terminal logs.
 * **Automatic Web Preview**: Embedded background web server (`net/http`) using **Pico CSS** that automatically launches and opens `http://localhost:3000` in your default browser as soon as a design asset is generated.
-* **Gemini Imagen API Integration**: Direct integration with Gemini Imagen model APIs (`imagen-3.0-generate-002`) with zero-config local placeholder fallbacks for offline or API-key-free testing.
 
 ---
 
@@ -116,23 +118,27 @@ You can configure the active image generation model in two ways:
 
 ```plaintext
 /apps/shubh-cli
+├── .env.example          # Environment configuration template
+├── .gitignore            # Git exclusion rules (.env, *.exe, /output/)
 ├── main.go               # Application entry point & template binder
 ├── go.mod                # Module: github.com/Ekarna-Interactive/ShubhPlan-CLI
 ├── /config
-│   └── env.go            # Environment variable loader & output directory resolver
+│   ├── env.go            # Environment variable loader & output directory resolver
+│   └── event_profile.go  # Persistent event_details.md loader & serializer
 ├── /generator
 │   ├── interface.go      # PromptBuilder interface contract
-│   └── basic_builder.go  # Community 1:1 single-resolution prompt compiler
+│   ├── basic_builder.go  # Single-resolution prompt compiler with card text instructions
+│   └── prompter.go        # Live Gemini LLM AI Prompter Agent with strict style mandate
 ├── /command
-│   └── parser.go         # Unified slash-command parser (/generate, /refine, /suggest, /preview)
+│   └── parser.go         # Unified slash-command parser (/generate, /style, /aspect, /event, etc.)
 ├── /server
 │   └── http.go           # Background net/http server & browser launcher
 ├── /templates
-│   └── index.html        # Pico CSS live asset preview template
+│   └── index.html        # Pico CSS live asset preview template with flex-centering
 └── /ui
-    ├── model.go          # Bubble Tea state initialization
-    ├── view.go           # Lipgloss terminal styling
-    └── update.go         # Gemini API handler & web preview trigger loop
+    ├── model.go          # Bubble Tea state & dual-pane layout model
+    ├── view.go           # Lipgloss terminal styling & dashboard cards
+    └── update.go         # Step event handling, Gemini API request executor, & viewport renderer
 ```
 
 ---
