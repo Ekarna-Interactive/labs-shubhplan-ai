@@ -139,17 +139,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			// Parse command
 			parsed := command.Parse(input)
-			resModel, resCmd := m.handleParsedCommand(parsed)
-			if updatedModel, ok := resModel.(Model); ok {
-				vpWidth := updatedModel.Width - 36
-				if vpWidth < 30 {
-					vpWidth = 30
-				}
-				updatedModel.Viewport.SetContent(formatLogsForViewport(updatedModel.Logs, vpWidth))
-				updatedModel.Viewport.GotoBottom()
-				return updatedModel, resCmd
+			updatedModel, resCmd := m.handleParsedCommand(parsed)
+			vpWidth := updatedModel.Width - 36
+			if vpWidth < 30 {
+				vpWidth = 30
 			}
-			return resModel, resCmd
+			updatedModel.Viewport.SetContent(formatLogsForViewport(updatedModel.Logs, vpWidth))
+			updatedModel.Viewport.GotoBottom()
+			return updatedModel, resCmd
 		}
 
 	case spinner.TickMsg:
@@ -238,7 +235,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *Model) handleParsedCommand(parsed command.ParsedInput) (tea.Model, tea.Cmd) {
+func (m Model) handleParsedCommand(parsed command.ParsedInput) (Model, tea.Cmd) {
 	// 1. Handle Slash Commands first if input begins with /
 	if strings.HasPrefix(strings.TrimSpace(parsed.RawInput), "/") {
 		m.Logs = append(m.Logs, LogEntry{Sender: "USER", Text: parsed.RawInput})
@@ -283,6 +280,8 @@ func (m *Model) handleParsedCommand(parsed command.ParsedInput) (tea.Model, tea.
 					})
 				}
 			} else {
+				m.Step = StepStyleSelection
+				m.TextInput.Placeholder = "Enter style number (1-7) or type style e.g. 2 or Paper Cut"
 				m.Logs = append(m.Logs, LogEntry{
 					Sender: "STEP 3/4",
 					Text:   renderStyleMenu(),
@@ -426,16 +425,17 @@ func (m *Model) handleParsedCommand(parsed command.ParsedInput) (tea.Model, tea.
 					Text:   fmt.Sprintf("✨ Updated Event Details and persisted to event_details.md:\n\"%s\"", details),
 				})
 			} else {
+				m.Step = StepEventDetails
+				m.TextInput.Placeholder = "Enter Event Details e.g. Wedding for Rohan & Ananya on Dec 12 at Bengaluru"
 				if m.EventDetails != "" {
 					m.Logs = append(m.Logs, LogEntry{
-						Sender: "SYSTEM",
-						Text:   fmt.Sprintf("📋 Active Event Details (saved in event_details.md):\n\"%s\"", m.EventDetails),
+						Sender: "STEP 1/4",
+						Text:   fmt.Sprintf("📋 Active Event Details (saved in event_details.md):\n\"%s\"\n\nEnter new details below or press Enter to keep:", m.EventDetails),
 					})
 				} else {
 					m.Logs = append(m.Logs, LogEntry{
-						Sender:  "WARNING",
-						Text:    "No active event profile set. Type '/event <details>' to save your event details.",
-						IsError: true,
+						Sender: "STEP 1/4",
+						Text:   "📋 Enter your Event Details (Event Type, Names, Date, Location):",
 					})
 				}
 			}
@@ -451,9 +451,11 @@ func (m *Model) handleParsedCommand(parsed command.ParsedInput) (tea.Model, tea.
 					Text:   fmt.Sprintf("✨ Updated Target Resolution to %s and persisted to event_details.md!", m.SelectedAspect),
 				})
 			} else {
+				m.Step = StepAspectSelection
+				m.TextInput.Placeholder = "Enter resolution number (1-4) or type aspect ratio e.g. 1 or 9:16"
 				m.Logs = append(m.Logs, LogEntry{
-					Sender: "SYSTEM",
-					Text:   fmt.Sprintf("📐 Active Target Resolution: %s\nUsage: /aspect [9:16 | 4:5 | 1:1 | 16:9]", m.SelectedAspect),
+					Sender: "STEP 2/4",
+					Text:   fmt.Sprintf("📐 Active Target Resolution: %s\n\n%s", m.SelectedAspect, renderAspectMenu()),
 				})
 			}
 			return m, nil
