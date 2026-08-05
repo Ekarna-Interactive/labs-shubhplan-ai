@@ -118,6 +118,8 @@ go build -o shubh-cli.exe main.go
 ```plaintext
 ├── .env.example          # Environment configuration template
 ├── .gitignore            # Git exclusion rules (.env, *.exe, /output/)
+├── CONTRIBUTING.md       # Contributing guidelines & source-available policy
+├── LICENSE               # Apache License 2.0 open-source terms
 ├── main.go               # Application entry point & template binder
 ├── go.mod                # Module: github.com/Ekarna-Interactive/ShubhPlan-CLI
 ├── /config
@@ -141,6 +143,16 @@ go build -o shubh-cli.exe main.go
 
 ---
 
+## 🤝 Contributing
+
+ShubhPlan-CLI is currently developed and maintained internally by Ekarna Interactive. 
+
+To maintain our rapid iteration cycles and keep the CLI tightly synchronized with the core Shubh Plan SaaS platform, **we are not accepting external pull requests or code contributions at this time.** 
+
+For more details, please see our [CONTRIBUTING.md](CONTRIBUTING.md).
+
+---
+
 ## 📜 License
 
-Distributed under the MIT License. Built with ❤️ by Ekarna Interactive Technology LLP as part of the open-source **Shubh Plan** ecosystem.
+Distributed under the [Apache License 2.0](LICENSE). Built with ❤️ by Ekarna Interactive Technology LLP as part of the open-source **Shubh Plan** ecosystem.
