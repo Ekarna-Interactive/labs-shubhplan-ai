@@ -42,7 +42,19 @@ While **Shubh Plan** provides an agentic AI workspace for professional event pla
   * `/config [key]` (Alias `/key`, `/apikey`): Inspect or update your Gemini API key from [Google AI Studio](https://aistudio.google.com/api-keys).
   * `/help` (Alias `/h`, `/?`): Displays interactive command shortcuts manual.
 * **Automatic Web Preview Server**: Embedded background web server (`net/http`) built with **Pico CSS** that launches automatically at `http://localhost:3000` to inspect rendered invitation designs in your default browser.
-* **Scrollable Terminal Viewport**: Full TUI keyboard and mouse wheel scrolling support (`PageUp`, `PageDown`, `Up`, `Down`, `Home`, `End`) built with Bubble Tea & Lipgloss.
+
+---
+
+## 🖥️ Terminal User Interface (TUI) Dashboard
+
+Shubh CLI features a rich dual-pane terminal interface powered by **Bubble Tea** and **Lipgloss**:
+
+* **🏛️ Dual-Pane Split Layout**:
+  * **Main Viewport (Left)**: Interactive scrollable activity log, ASCII header banner, dynamic step prompts, and prompt suggestions.
+  * **Live Status Sidebar (Right)**: Real-time dashboard card displaying your Active Event Details, Selected Aspect Ratio, Design Style Preset, and API Model Status.
+* **📊 Visual Step Progress Bar**: Real-time step indicator (`API Setup` ➔ `Event Profile` ➔ `Resolution` ➔ `Style Preset` ➔ `AI Prompter`) keeping you informed of your setup progress.
+* **🎨 Palette & Badge Styling**: Styled with Imperial Gold (`#D4AF37`), Electric Teal (`#06B6D4`), and Royal Crimson (`#E11D48`) badges for `USER`, `AI`, `BUILDER`, `SYSTEM`, and `ERROR` events.
+* **⚡ Viewport Controls & Mouse Wheel**: Smooth viewport scrolling using mouse wheel, `PageUp`, `PageDown`, `Up`, `Down`, `Home`, and `End` keys.
 
 ---
 
