@@ -32,29 +32,33 @@ func (b *BasicBuilder) CompileWithAspect(eventDetails string, welcomeMessage str
 		aspect = "9:16"
 	}
 
-	aspectInstruction := "aspect ratio 9:16 vertical poster story layout"
+	aspectInstruction := "aspect ratio 9:16 vertical poster format"
 	switch aspect {
 	case "4:5":
-		aspectInstruction = "aspect ratio 4:5 vertical portrait social feed layout"
+		aspectInstruction = "aspect ratio 4:5 vertical portrait format"
 	case "1:1":
-		aspectInstruction = "aspect ratio 1:1 square standard card layout"
+		aspectInstruction = "aspect ratio 1:1 square format"
 	case "16:9":
-		aspectInstruction = "aspect ratio 16:9 landscape banner desktop layout"
+		aspectInstruction = "aspect ratio 16:9 landscape banner format"
 	case "9:16":
-		aspectInstruction = "aspect ratio 9:16 vertical mobile story layout"
+		aspectInstruction = "aspect ratio 9:16 vertical poster format"
 	}
+
+	negativeNoUIInstruction := "standalone physical invitation card graphic artwork, no smartphone UI, no mobile status bar, no clock or battery status bar, no screen bezels"
 
 	var corePrompt string
 	if welcomeText != "" {
 		corePrompt = fmt.Sprintf(
-			"Full view complete invitation card illustration, entire card visible from top header to bottom footer with generous margin padding around all edges, no cropped top or bottom text, uncropped complete framing, %s. MANDATORY TEXT TO RENDER ON CARD PLATE: '%s'. Secondary welcome text: '%s'. High contrast legible typography on a translucent background plate, premium ornate floral gold borders, vibrant colors, clean studio lighting.",
+			"Full view complete invitation card graphic illustration, %s, entire card visible from top header to bottom footer with generous margin padding around all edges, no cropped top or bottom text, uncropped complete framing, %s. MANDATORY TEXT TO RENDER ON CARD PLATE: '%s'. Secondary welcome text: '%s'. High contrast legible typography on a translucent background plate, premium ornate floral gold borders, vibrant colors, clean studio lighting.",
+			negativeNoUIInstruction,
 			aspectInstruction,
 			cleanDetails,
 			welcomeText,
 		)
 	} else {
 		corePrompt = fmt.Sprintf(
-			"Full view complete invitation card illustration, entire card visible from top header to bottom footer with generous margin padding around all edges, no cropped top or bottom text, uncropped complete framing, %s. MANDATORY TEXT TO RENDER ON CARD PLATE: '%s'. High contrast legible central typography, ornate floral gold borders, vibrant colors, clean studio lighting.",
+			"Full view complete invitation card graphic illustration, %s, entire card visible from top header to bottom footer with generous margin padding around all edges, no cropped top or bottom text, uncropped complete framing, %s. MANDATORY TEXT TO RENDER ON CARD PLATE: '%s'. High contrast legible central typography, ornate floral gold borders, vibrant colors, clean studio lighting.",
+			negativeNoUIInstruction,
 			aspectInstruction,
 			cleanDetails,
 		)
