@@ -809,13 +809,16 @@ func createPlaceholderImage(outPath string, title string, welcome string) error 
 
 func generateGeminiImage(apiKey string, modelName string, prompt string, aspect string, outPath string) error {
 	if modelName == "" {
-		modelName = "imagen-3.0-generate-002"
+		modelName = "gemini-3.1-flash-image"
 	}
 
 	err := executeGeminiModelRequest(apiKey, modelName, prompt, aspect, outPath)
-	if err != nil && (strings.Contains(err.Error(), "404") || strings.Contains(err.Error(), "NOT_FOUND")) && modelName != "imagen-3.0-generate-002" {
-		// Auto-fallback to official production model if requested experimental model returns 404
-		return executeGeminiModelRequest(apiKey, "imagen-3.0-generate-002", prompt, aspect, outPath)
+	if err != nil && modelName != "imagen-3.0-generate-002" {
+		// Auto-fallback to Imagen model if primary model returns error or no image data
+		errFallback := executeGeminiModelRequest(apiKey, "imagen-3.0-generate-002", prompt, aspect, outPath)
+		if errFallback == nil {
+			return nil
+		}
 	}
 	return err
 }
@@ -840,7 +843,7 @@ func executeGeminiModelRequest(apiKey string, modelName string, prompt string, a
 				},
 			},
 			"generationConfig": map[string]interface{}{
-				"responseModalities": []string{"IMAGE", "TEXT"},
+				"responseModalities": []string{"IMAGE"},
 			},
 		}
 		bodyBytes, err = json.Marshal(payloadMap)

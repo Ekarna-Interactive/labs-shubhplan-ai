@@ -37,14 +37,14 @@ Every prompt must be a unique, highly creative variation entirely inside the req
 
 Each prompt must describe:
 1. Composition: Full view complete invitation card visible from top to bottom with margin padding around all 4 edges.
-2. Typography: Centered high-contrast legible event typography on a translucent background plate.
+2. Typography: Centered high-contrast legible event typography with text "%s" on a translucent background plate.
 3. Aesthetics: Specific color swatches, textures, borders, and studio lighting strictly matching '%s'.
 
 Output format requirement: Return EXACTLY 4 numbered lines without introduction or markdown formatting:
 1. <Prompt 1>
 2. <Prompt 2>
 3. <Prompt 3>
-4. <Prompt 4>`, details, style, style, style, style)
+4. <Prompt 4>`, details, style, style, style, details, style)
 
 	// Models to try in sequence
 	modelsToTry := []string{"gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-flash", "gemini-3.5-flash"}
