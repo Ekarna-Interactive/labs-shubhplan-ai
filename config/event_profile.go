@@ -98,24 +98,44 @@ func LoadEventProfile() (EventProfile, bool) {
 
 // SaveEventProfile persists the user's event details into event_details.md
 func SaveEventProfile(rawDetails string, welcomeMessage string, targetAspect string) error {
-	cleanDetails := strings.TrimSpace(rawDetails)
-	if cleanDetails == "" {
-		return nil
-	}
+	return SaveStructuredEventProfile("Event", rawDetails, "", "", welcomeMessage, targetAspect)
+}
+
+// SaveStructuredEventProfile persists structured event details into event_details.md
+func SaveStructuredEventProfile(eventType, hostNames, eventDate, venue, welcomeMsg, targetAspect string) error {
 	if targetAspect == "" {
 		targetAspect = "9:16"
 	}
+
+	parts := []string{}
+	if eventType != "" {
+		parts = append(parts, eventType)
+	}
+	if hostNames != "" {
+		parts = append(parts, "for "+hostNames)
+	}
+	if eventDate != "" {
+		parts = append(parts, "on "+eventDate)
+	}
+	if venue != "" {
+		parts = append(parts, "at "+venue)
+	}
+	rawDetails := strings.Join(parts, " ")
 
 	filePath := filepath.Join(".", EventProfileFilename)
 
 	mdContent := fmt.Sprintf(`# 📋 Active Event Profile
 
 * **Target Aspect Ratio**: %s
+* **Event Type**: %s
+* **Host / Couple Names**: %s
+* **Event Date**: %s
+* **Venue & Location**: %s
 * **Welcome Message**: %s
 
 ## Full Raw Details
 %s
-`, targetAspect, welcomeMessage, cleanDetails)
+`, targetAspect, eventType, hostNames, eventDate, venue, welcomeMsg, rawDetails)
 
 	return os.WriteFile(filePath, []byte(mdContent), 0644)
 }

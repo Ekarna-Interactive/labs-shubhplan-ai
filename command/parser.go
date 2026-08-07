@@ -16,6 +16,7 @@ const (
 	CmdStyle    CommandType = "STYLE"
 	CmdEvent    CommandType = "EVENT"
 	CmdAspect   CommandType = "ASPECT"
+	CmdWelcome  CommandType = "WELCOME"
 	CmdReset    CommandType = "RESET"
 	CmdHelp     CommandType = "HELP"
 	CmdUnknown  CommandType = "UNKNOWN"
@@ -85,6 +86,14 @@ func Parse(input string) ParsedInput {
 	case "/aspect", "/resolution", "/res", "/ratio":
 		return ParsedInput{
 			Type:         CmdAspect,
+			RawInput:     input,
+			EventDetails: argsString,
+			Args:         parts[1:],
+		}
+
+	case "/welcome", "/welcome-message", "/subheader", "/msg", "/wel":
+		return ParsedInput{
+			Type:         CmdWelcome,
 			RawInput:     input,
 			EventDetails: argsString,
 			Args:         parts[1:],
