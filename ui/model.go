@@ -18,7 +18,12 @@ type WizardStep int
 
 const (
 	StepAPIKey WizardStep = iota
-	StepEventDetails
+	StepEventType
+	StepHostNames
+	StepEventDate
+	StepVenue
+	StepWelcomeMessage
+	StepAwaitingWelcomeChoice
 	StepAspectSelection
 	StepStyleSelection
 	StepPromptChoice
@@ -35,15 +40,21 @@ type LogEntry struct {
 
 // Model represents the Bubble Tea application state
 type Model struct {
-	TextInput      textinput.Model
-	SetupInput     textinput.Model
-	Viewport       viewport.Model
-	IsSetupMode    bool
-	Step           WizardStep
-	EventDetails   string
+	TextInput          textinput.Model
+	SetupInput         textinput.Model
+	Viewport           viewport.Model
+	IsSetupMode        bool
+	Step               WizardStep
+	EventType          string
+	HostNames          string
+	EventDate          string
+	Venue              string
+	WelcomeMessage     string
+	WelcomeSuggestions []string
+	EventDetails       string
 	SelectedAspect string
 	SelectedStyle  string
-	WelcomeMessage string
+	OptionIndex    int
 	Suggestions    []string
 	Spinner        spinner.Model
 	Loading        bool
@@ -62,7 +73,7 @@ type Model struct {
 // InitialModel initializes the Bubble Tea state
 func InitialModel(cfg config.Config, builder generator.PromptBuilder) Model {
 	ti := textinput.New()
-	ti.Placeholder = "Enter Event Details e.g. Wedding for Rohan & Ananya on Dec 12 at Bengaluru"
+	ti.Placeholder = "e.g. Wedding, Naming Ceremony, Housewarming"
 	ti.Focus()
 	ti.CharLimit = 256
 	ti.Width = 80
@@ -79,7 +90,7 @@ func InitialModel(cfg config.Config, builder generator.PromptBuilder) Model {
 	vp := viewport.New(80, 20)
 
 	isSetup := cfg.GeminiAPIKey == ""
-	initialStep := StepEventDetails
+	initialStep := StepEventType
 	if isSetup {
 		initialStep = StepAPIKey
 	}
@@ -88,16 +99,9 @@ func InitialModel(cfg config.Config, builder generator.PromptBuilder) Model {
 		{Sender: "SYSTEM", Text: "✨ Welcome to Shubh CLI — AI Event Design Terminal!"},
 	}
 
-	loadedDetails := ""
-	loadedWelcome := ""
-	loadedAspect := "9:16"
 	profile, hasProfile := config.LoadEventProfile()
-	if hasProfile {
-		loadedDetails = profile.RawDetails
-		loadedWelcome = profile.WelcomeMessage
-		if profile.TargetAspect != "" {
-			loadedAspect = profile.TargetAspect
-		}
+	if profile.TargetAspect == "" {
+		profile.TargetAspect = "9:16"
 	}
 
 	if isSetup {
@@ -109,19 +113,20 @@ func InitialModel(cfg config.Config, builder generator.PromptBuilder) Model {
 		})
 	} else if hasProfile {
 		initialStep = StepStyleSelection
-		ti.Placeholder = "Enter style number (1-7) or type style e.g. 2 or Paper Cut"
+		ti.Placeholder = "Use ↑/↓ arrow keys to select, press Enter to confirm, or type style"
 		initialLogs = append(initialLogs, LogEntry{
 			Sender: "PROFILE",
-			Text:   fmt.Sprintf("📋 Loaded active event profile from event_details.md:\n\"%s\" (Aspect: %s)", loadedDetails, loadedAspect),
+			Text:   fmt.Sprintf("📋 Loaded active event profile from event_details.md:\n  • Event Type: %s\n  • Host/Couple Names: %s\n  • Date: %s\n  • Venue: %s\n  • Welcome Subheader: %s\n  • Resolution: %s", profile.EventType, profile.HostNames, profile.EventDate, profile.Venue, profile.WelcomeMessage, profile.TargetAspect),
 		})
 		initialLogs = append(initialLogs, LogEntry{
 			Sender: "STEP 3/4",
-			Text:   renderStyleMenu(),
+			Text:   renderStyleMenu(0),
 		})
 	} else {
+		ti.Placeholder = "Use ↑/↓ arrow keys to select, press Enter to confirm, or type event type"
 		initialLogs = append(initialLogs, LogEntry{
-			Sender: "STEP 1/4",
-			Text:   "📋 Enter your Event Details (Event Type, Names, Date, Location):\ne.g. 'Wedding for Rohan & Ananya on Dec 12 at Leela Palace, Bengaluru' or 'Naming Ceremony for Aarav on Nov 5'",
+			Sender: "STEP 1/5",
+			Text:   renderEventTypeMenu(0),
 		})
 	}
 
@@ -131,9 +136,13 @@ func InitialModel(cfg config.Config, builder generator.PromptBuilder) Model {
 		Viewport:       vp,
 		IsSetupMode:    isSetup,
 		Step:           initialStep,
-		EventDetails:   loadedDetails,
-		SelectedAspect: loadedAspect,
-		WelcomeMessage: loadedWelcome,
+		EventType:      profile.EventType,
+		HostNames:      profile.HostNames,
+		EventDate:      profile.EventDate,
+		Venue:          profile.Venue,
+		WelcomeMessage: profile.WelcomeMessage,
+		EventDetails:   profile.RawDetails,
+		SelectedAspect: profile.TargetAspect,
 		Spinner:        s,
 		Loading:        false,
 		StatusMsg:      "Ready",

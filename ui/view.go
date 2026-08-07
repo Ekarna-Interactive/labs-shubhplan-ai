@@ -170,7 +170,7 @@ func renderStepProgressBar(currentStep WizardStep, isSetup bool) string {
 		Step WizardStep
 	}{
 		{"🔑 API Key", StepAPIKey},
-		{"📋 Event Details", StepEventDetails},
+		{"📋 Event Details", StepEventType},
 		{"📐 Aspect Ratio", StepAspectSelection},
 		{"🎨 Design Style", StepStyleSelection},
 		{"🤖 AI Prompts", StepPromptChoice},
@@ -199,6 +199,22 @@ func renderSidebarDashboard(m Model, width int) string {
 
 	// 1. Active Event Profile Card
 	eventDetailsText := m.EventDetails
+	if m.EventType != "" || m.HostNames != "" {
+		parts := []string{}
+		if m.EventType != "" {
+			parts = append(parts, m.EventType)
+		}
+		if m.HostNames != "" {
+			parts = append(parts, "for "+m.HostNames)
+		}
+		if m.EventDate != "" {
+			parts = append(parts, "on "+m.EventDate)
+		}
+		if m.Venue != "" {
+			parts = append(parts, "at "+m.Venue)
+		}
+		eventDetailsText = strings.Join(parts, " ")
+	}
 	if eventDetailsText == "" {
 		eventDetailsText = "Not configured yet"
 	} else if len(eventDetailsText) > 45 {
@@ -254,9 +270,14 @@ func renderSidebarDashboard(m Model, width int) string {
 		keyStatus = "🟡 Offline Dry-Run"
 	}
 
+	displayModel := m.Config.ImageModel
+	if displayModel == "" {
+		displayModel = "Not Configured"
+	}
+
 	modelCard := fmt.Sprintf("%s\n%s\n%s",
 		sidebarLabelStyle.Render("🤖 AI MODEL STATUS:"),
-		sidebarValueStyle.Render("gemini-3.1-flash-image"),
+		sidebarValueStyle.Render(displayModel),
 		sidebarValueStyle.Render(keyStatus),
 	)
 	b.WriteString(sidebarCardStyle.Width(width - 2).Render(modelCard))

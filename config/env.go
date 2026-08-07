@@ -21,9 +21,6 @@ func LoadConfig() Config {
 
 	key := getEnvClean("GEMINI_API_KEY")
 	modelName := getEnvClean("GEMINI_IMAGE_MODEL")
-	if modelName == "" {
-		modelName = "gemini-3.1-flash-image"
-	}
 	outDir := getEnvClean("SHUBH_OUTPUT_DIR")
 	if outDir == "" {
 		outDir = "./output"

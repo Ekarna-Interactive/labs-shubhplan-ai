@@ -21,13 +21,16 @@ func (b *BasicBuilder) Compile(eventDetails string, welcomeMessage string) Respo
 
 // CompileWithAspect constructs a prompt tailored to the requested aspect ratio layout.
 func (b *BasicBuilder) CompileWithAspect(eventDetails string, welcomeMessage string, aspect string) ResponsePayload {
-	cleanDetails := strings.TrimSpace(eventDetails)
-	if cleanDetails == "" {
-		cleanDetails = "Auspicious Celebration Invitation"
-	}
+	return b.CompileStructured(EventData{
+		VisualPrompt:   eventDetails,
+		WelcomeMessage: welcomeMessage,
+		Aspect:         aspect,
+	})
+}
 
-	welcomeText := strings.TrimSpace(welcomeMessage)
-
+// CompileStructured compiles structured event details (matching agents-adk) into target prompt payload.
+func (b *BasicBuilder) CompileStructured(data EventData) ResponsePayload {
+	aspect := data.Aspect
 	if aspect == "" {
 		aspect = "9:16"
 	}
@@ -45,138 +48,219 @@ func (b *BasicBuilder) CompileWithAspect(eventDetails string, welcomeMessage str
 	}
 
 	negativeNoUIInstruction := "standalone physical invitation card graphic artwork, no smartphone UI, no mobile status bar, no clock or battery status bar, no screen bezels"
-	noPromptTextInstruction := "CRITICAL TYPOGRAPHY MANDATE: Do NOT print meta-descriptions, structural phrases, or headers like 'a complete wedding invitation card', 'invitation card', 'full view', or prompt text anywhere on the image. ONLY print the actual event details (host names, date, venue) on the center plate."
+	noPromptTextInstruction := "CRITICAL PRINTING MANDATE: Render ONLY the exact text specified in MANDATORY TEXT inside the central card plate. Do NOT print any meta-descriptions, prompt text, camera instructions, or extraneous labels anywhere on the image."
 
-	var corePrompt string
-	var displayTitle string
+	// Format Title / Hosts with occasion context
+	names := strings.TrimSpace(data.HostNames)
+	eventType := strings.TrimSpace(data.EventType)
 
-	if isFullPromptDescription(cleanDetails) {
-		cardText := extractCardTextFromPrompt(cleanDetails)
-		displayTitle = cardText
-		sanitizedVisualPrompt := sanitizeVisualPromptBody(cleanDetails)
-
-		if welcomeText != "" {
-			corePrompt = fmt.Sprintf(
-				"%s, %s, %s. MANDATORY TEXT TO RENDER ON CARD PLATE: '%s'. Secondary welcome text: '%s'. %s",
-				sanitizedVisualPrompt,
-				negativeNoUIInstruction,
-				aspectInstruction,
-				cardText,
-				welcomeText,
-				noPromptTextInstruction,
-			)
-		} else {
-			corePrompt = fmt.Sprintf(
-				"%s, %s, %s. MANDATORY TEXT TO RENDER ON CARD PLATE: '%s'. %s",
-				sanitizedVisualPrompt,
-				negativeNoUIInstruction,
-				aspectInstruction,
-				cardText,
-				noPromptTextInstruction,
-			)
+	if names != "" && eventType != "" && !strings.Contains(strings.ToLower(names), strings.ToLower(eventType)) {
+		switch strings.ToLower(eventType) {
+		case "birthday":
+			names = fmt.Sprintf("Birthday Celebration of %s", names)
+		case "naming_ceremony", "naming ceremony", "naming":
+			names = fmt.Sprintf("Naming Ceremony of %s", names)
+		case "baby_shower", "baby shower", "seemantham":
+			names = fmt.Sprintf("Baby Shower for %s", names)
+		case "housewarming", "griha pravesh":
+			names = fmt.Sprintf("Housewarming Celebration of %s", names)
+		case "wedding":
+			names = fmt.Sprintf("Wedding of %s", names)
+		default:
+			names = fmt.Sprintf("%s Celebration of %s", eventType, names)
 		}
-	} else {
-		displayTitle = stripMetaPhrases(cleanDetails)
-		if welcomeText != "" {
-			corePrompt = fmt.Sprintf(
-				"Bespoke event invitation graphic artwork, %s, entire card visible from top header to bottom footer with generous margin padding around all edges, no cropped top or bottom text, uncropped complete framing, %s. MANDATORY TEXT TO RENDER ON CARD PLATE: '%s'. Secondary welcome text: '%s'. High contrast legible typography on a translucent background plate, premium ornate floral gold borders, vibrant colors, clean studio lighting. %s",
-				negativeNoUIInstruction,
-				aspectInstruction,
-				displayTitle,
-				welcomeText,
-				noPromptTextInstruction,
-			)
-		} else {
-			corePrompt = fmt.Sprintf(
-				"Bespoke event invitation graphic artwork, %s, entire card visible from top header to bottom footer with generous margin padding around all edges, no cropped top or bottom text, uncropped complete framing, %s. MANDATORY TEXT TO RENDER ON CARD PLATE: '%s'. High contrast legible central typography, ornate floral gold borders, vibrant colors, clean studio lighting. %s",
-				negativeNoUIInstruction,
-				aspectInstruction,
-				displayTitle,
-				noPromptTextInstruction,
-			)
+	} else if names == "" {
+		if data.VisualPrompt != "" {
+			names = extractCardTextFromPrompt(data.VisualPrompt)
+		}
+		if names == "" || names == "Auspicious Event Celebration" {
+			if eventType != "" {
+				names = fmt.Sprintf("%s Celebration", eventType)
+			} else {
+				names = "Auspicious Event Celebration"
+			}
 		}
 	}
+
+	displayTitle := names
+
+	// Format Date & Venue
+	dateStr := strings.TrimSpace(data.EventDate)
+	venueStr := strings.TrimSpace(data.Venue)
+	welcomeMsg := strings.TrimSpace(data.WelcomeMessage)
+
+	if welcomeMsg == "" && eventType != "" {
+		switch strings.ToLower(eventType) {
+		case "birthday":
+			welcomeMsg = "Let us celebrate a wonderful milestone"
+		case "naming_ceremony", "naming ceremony", "naming":
+			welcomeMsg = "Join us as we name our little angel"
+		case "baby_shower", "baby shower":
+			welcomeMsg = "Blessed with love, arriving with joy"
+		case "housewarming", "griha pravesh":
+			welcomeMsg = "New home, new beginnings, endless blessings"
+		case "wedding":
+			welcomeMsg = "Together with our families, we invite you"
+		}
+	}
+
+	dateVenueParts := []string{}
+	if dateStr != "" {
+		dateVenueParts = append(dateVenueParts, dateStr)
+	}
+	if venueStr != "" {
+		dateVenueParts = append(dateVenueParts, venueStr)
+	}
+	dateVenueStr := strings.Join(dateVenueParts, " | ")
+
+	// Build 3-line mandatory typography mandate matching agents-adk
+	var mandatoryTextSpec string
+	if welcomeMsg != "" && dateVenueStr != "" {
+		mandatoryTextSpec = fmt.Sprintf("MANDATORY TYPOGRAPHY TO RENDER IN CENTRAL PLATE (3-LINE HIERARCHY): Line 1 (Main Title): '%s'. Line 2 (Secondary Welcome Subheader): '%s'. Line 3 (Date & Location): '%s'.", names, welcomeMsg, dateVenueStr)
+	} else if welcomeMsg != "" {
+		mandatoryTextSpec = fmt.Sprintf("MANDATORY TYPOGRAPHY TO RENDER IN CENTRAL PLATE (2-LINE HIERARCHY): Line 1 (Main Title): '%s'. Line 2 (Secondary Welcome Subheader): '%s'.", names, welcomeMsg)
+	} else if dateVenueStr != "" {
+		mandatoryTextSpec = fmt.Sprintf("MANDATORY TYPOGRAPHY TO RENDER IN CENTRAL PLATE (2-LINE HIERARCHY): Line 1 (Main Title): '%s'. Line 2 (Date & Location): '%s'.", names, dateVenueStr)
+	} else {
+		mandatoryTextSpec = fmt.Sprintf("MANDATORY TYPOGRAPHY TO RENDER IN CENTRAL PLATE: '%s'.", names)
+	}
+
+	sanitizedVisualPrompt := sanitizeVisualPromptBody(data.VisualPrompt)
+	if sanitizedVisualPrompt == "" || sanitizedVisualPrompt == "Bespoke event invitation artwork with elegant central card plate, ornate decorative borders, and soft studio lighting" {
+		if eventType != "" {
+			sanitizedVisualPrompt = fmt.Sprintf("Bespoke %s invitation graphic artwork with ornate decorative borders, translucent central label plate, and soft studio lighting", eventType)
+		}
+	}
+
+	corePrompt := fmt.Sprintf(
+		"Visual theme: %s, %s, %s. %s %s",
+		sanitizedVisualPrompt,
+		negativeNoUIInstruction,
+		aspectInstruction,
+		mandatoryTextSpec,
+		noPromptTextInstruction,
+	)
 
 	return ResponsePayload{
 		CorePrompt:     corePrompt,
 		DisplayTitle:   displayTitle,
-		WelcomeMessage: welcomeText,
+		WelcomeMessage: welcomeMsg,
 		Aspect:         aspect,
 	}
 }
 
-func isFullPromptDescription(text string) bool {
-	lower := strings.ToLower(text)
-	return len(text) > 80 ||
-		strings.Contains(lower, "full view") ||
-		strings.Contains(lower, "styled in") ||
-		strings.Contains(lower, "typography with") ||
-		strings.Contains(lower, "artwork for") ||
-		strings.Contains(lower, "illustration for") ||
-		strings.Contains(lower, "composition for")
-}
 
 func sanitizeVisualPromptBody(prompt string) string {
-	// Strip meta-phrases that cause models to render literal description headings on card plates
 	cleaned := prompt
-	metaPhrasesToClean := []string{
-		"Full view of a complete rectangular wedding invitation card with generous margin padding around all four borders, styled in ",
-		"Full view of a complete rectangular invitation card with generous margin padding around all four borders, styled in ",
-		"Full view of a complete wedding invitation card",
-		"Full view complete invitation card illustration for ",
-		"Full view of a complete ",
-		"a complete wedding invitation card",
-		"complete wedding invitation card",
+
+	// Strip MANDATORY EVENT DETAILS marker if present
+	if idx := strings.Index(strings.ToLower(cleaned), "mandatory event details:"); idx != -1 {
+		cleaned = cleaned[:idx]
 	}
-	for _, phrase := range metaPhrasesToClean {
-		cleaned = strings.ReplaceAll(cleaned, phrase, "Bespoke event invitation artwork styled in ")
+
+	// 1. Remove structural section headers like "1. Composition:", "2. Typography:", "Aesthetics:"
+	reHeader := regexp.MustCompile(`(?i)^\s*\d+[\.\)]?\s*(Composition|Typography|Aesthetics):\s*`)
+	cleaned = reHeader.ReplaceAllString(cleaned, "")
+
+	// 2. Strip camera shot & framing meta-phrases
+	metaRegexes := []*regexp.Regexp{
+		regexp.MustCompile(`(?i)^A\s+full\s+and\s+complete\s+shot\s+of\s+(an?\s+)?(elegant\s+)?(wedding\s+)?(invitation\s+card\s+)?(styled\s+in\s+)?`),
+		regexp.MustCompile(`(?i)\bA\s+full\s+and\s+complete\s+shot\s+of\s+(an?\s+)?(elegant\s+)?(wedding\s+)?inv(itation)?\b`),
+		regexp.MustCompile(`(?i)\bFull\s+view\s+of\s+a\s+complete\s+(rectangular\s+)?(wedding\s+)?invitation\s+card(\s+with\s+generous\s+margin\s+padding\s+around\s+all\s+four\s+borders)?,?\s*(styled\s+in)?`),
+		regexp.MustCompile(`(?i)\bFull\s+view\s+complete\s+invitation\s+card\s+illustration\s+for\b`),
+		regexp.MustCompile(`(?i)\bFull\s+view\s+of\s+a\s+complete\b`),
+		regexp.MustCompile(`(?i)\bA\s+complete\s+shot\s+of\b`),
+		regexp.MustCompile(`(?i)\b(Composition|Typography|Aesthetics):\s*`),
 	}
-	return strings.TrimSpace(cleaned)
+	for _, re := range metaRegexes {
+		cleaned = re.ReplaceAllString(cleaned, "")
+	}
+
+	// 3. Strip typography instruction sentences like "Centered high-contrast legible event typography with text '...'"
+	reTypo := regexp.MustCompile(`(?i)\bCentered\s+high-contrast\s+legible\s+(event\s+)?typography\s+(with\s+text\s*["'“][^"'”]+["'”])?\s*(on\s+a\s+[a-z\s]+plate)?\.?\b`)
+	cleaned = reTypo.ReplaceAllString(cleaned, "")
+
+	// 4. Strip leftover quoted text specifications from visual body to prevent model reading text twice
+	reQuotes := regexp.MustCompile(`(?i)(?:with\s+the\s+text|with\s+text|text)\s*["'“][^"'”]+["'”]`)
+	cleaned = reQuotes.ReplaceAllString(cleaned, "")
+
+	// 5. Clean up extra punctuation/spaces
+	cleaned = strings.TrimSpace(cleaned)
+	cleaned = strings.TrimPrefix(cleaned, ",")
+	cleaned = strings.TrimPrefix(cleaned, ".")
+	cleaned = strings.TrimSpace(cleaned)
+
+	if cleaned == "" {
+		cleaned = "Bespoke event invitation artwork with elegant central card plate, ornate decorative borders, and soft studio lighting"
+	}
+	return cleaned
 }
 
 func extractCardTextFromPrompt(prompt string) string {
-	// 1. Look for quoted text e.g. text "Priya & Arjun" or text 'Priya & Arjun'
-	quotedRegex := regexp.MustCompile(`(?:text|with the text|titled)\s*["'“]([^"'”]+)["'”]`)
-	matches := quotedRegex.FindStringSubmatch(prompt)
-	if len(matches) > 1 && strings.TrimSpace(matches[1]) != "" {
-		return stripMetaPhrases(strings.TrimSpace(matches[1]))
-	}
-
-	// 2. Look for "for <Event Name> rendered/featuring/styled"
-	forRegex := regexp.MustCompile(`(?:for|of)\s+([A-Za-z0-9\s&'-]+?)(?:\s+(?:rendered|styled|featuring|with|in\s+[A-Z])|$)`)
-	matchesFor := forRegex.FindStringSubmatch(prompt)
-	if len(matchesFor) > 1 && strings.TrimSpace(matchesFor[1]) != "" {
-		result := strings.TrimSpace(matchesFor[1])
-		if len(result) > 3 && len(result) < 60 {
-			return stripMetaPhrases(result)
+	// 1. Look for MANDATORY EVENT DETAILS marker
+	markerRegex := regexp.MustCompile(`(?i)(?:MANDATORY\s+EVENT\s+DETAILS|Event\s+details):\s*([^\.]+?)(?:\.|$|\n)`)
+	matchesMarker := markerRegex.FindStringSubmatch(prompt)
+	if len(matchesMarker) > 1 && strings.TrimSpace(matchesMarker[1]) != "" {
+		res := stripMetaPhrases(strings.TrimSpace(matchesMarker[1]))
+		if res != "" {
+			return res
 		}
 	}
 
-	// 3. Fallback: Strip common visual prefix phrases
-	cleaned := prompt
-	prefixes := []string{
-		"Full view complete invitation card illustration for ",
-		"Full view of a complete rectangular wedding invitation card with generous margin padding around all four borders, styled in ",
-		"Full view of a complete ",
-		"Bespoke invitation artwork for ",
-		"Ornate composition for ",
-		"Modern premium banner artwork for ",
-	}
-	for _, prefix := range prefixes {
-		cleaned = strings.TrimPrefix(cleaned, prefix)
+	// 2. Look for quoted text e.g. text "Priya & Arjun" or text 'Priya & Arjun'
+	quotedRegex := regexp.MustCompile(`(?:text|with the text|titled)\s*["'“]([^"'”]+)["'”]`)
+	matches := quotedRegex.FindStringSubmatch(prompt)
+	if len(matches) > 1 && strings.TrimSpace(matches[1]) != "" {
+		res := stripMetaPhrases(strings.TrimSpace(matches[1]))
+		if res != "" {
+			return res
+		}
 	}
 
-	if idx := strings.IndexAny(cleaned, ",."); idx > 0 && idx < 60 {
-		cleaned = cleaned[:idx]
-	} else if len(cleaned) > 50 {
-		cleaned = cleaned[:50]
+	// 3. Look for "for <Event Name> rendered/featuring/styled"
+	forRegex := regexp.MustCompile(`(?:for|of)\s+([A-Za-z0-9\s&',.-]+?)(?:\s+(?:rendered|styled|featuring|with|in\s+[A-Z]|on\s+a|central)|$)`)
+	matchesFor := forRegex.FindStringSubmatch(prompt)
+	if len(matchesFor) > 1 && strings.TrimSpace(matchesFor[1]) != "" {
+		result := strings.TrimSpace(matchesFor[1])
+		if len(result) > 3 && len(result) < 80 {
+			res := stripMetaPhrases(result)
+			if res != "" && !isVisualDescriptionText(res) {
+				return res
+			}
+		}
 	}
 
-	return stripMetaPhrases(cleaned)
+	// 4. Safe fallback: DO NOT truncate visual background descriptions into card text!
+	cleaned := stripMetaPhrases(prompt)
+	if !isVisualDescriptionText(cleaned) && len(cleaned) > 3 && len(cleaned) < 80 {
+		return cleaned
+	}
+
+	return "Auspicious Event Celebration"
+}
+
+func isVisualDescriptionText(text string) bool {
+	lower := strings.ToLower(text)
+	keywords := []string{
+		"vintage", "regal", "background", "parchment", "texture", "arch", "gold foil",
+		"sage green", "leaves", "lotus", "floral", "mughal", "plate", "glowing",
+		"haze", "aesthetic", "silhouettes", "filigree", "watercolor", "clay", "pop art",
+		"paper cut", "craft paper", "studio lighting", "artwork", "composition",
+		"banner", "minimalist", "south indian", "crimson", "pastel", "halftone",
+	}
+	for _, kw := range keywords {
+		if strings.Contains(lower, kw) {
+			return true
+		}
+	}
+	return false
 }
 
 func stripMetaPhrases(text string) string {
 	phrases := []string{
+		"a full and complete shot of an elegant",
+		"a full and complete shot of",
+		"a complete shot of",
 		"a complete wedding invitation card",
 		"complete wedding invitation card",
 		"wedding invitation card",
@@ -188,6 +272,9 @@ func stripMetaPhrases(text string) string {
 		"graphic illustration",
 		"illustration for",
 		"artwork for",
+		"composition for",
+		"centered high-contrast legible event typography",
+		"centered high-contrast legible typography",
 	}
 	cleaned := text
 	for _, p := range phrases {
