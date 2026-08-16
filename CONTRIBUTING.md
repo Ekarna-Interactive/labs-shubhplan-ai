@@ -1,13 +1,13 @@
-# Contributing to ShubhPlan-CLI
+# Contributing to Shubh Plan AI Open-Source (`shubh-plan-open`)
 
-Thank you for your interest in ShubhPlan-CLI! 
+Thank you for your interest in `shubh-plan-open`! 
 
 Currently, this repository operates under a **source-available / read-only open-source model**. 
 
 ### Why are contributions closed?
-ShubhPlan-CLI is the open-source terminal companion to the Shubh Plan B2B platform. The codebase is heavily synchronized with our private monorepo via automated, unidirectional deployments. 
+`shubh-plan-open` is the open-source technical showcase application for the Shubh Plan AI Multi-Agent Event Platform. The codebase is heavily synchronized with our private monorepo via automated, unidirectional deployments. 
 
-Because the CLI shares core architectural logic with our private enterprise infrastructure, accepting external pull requests introduces significant complexities in syncing, testing, and maintaining our intellectual property boundaries. 
+Because `shubh-plan-open` shares core architectural logic with our private enterprise infrastructure, accepting external pull requests introduces significant complexities in syncing, testing, and maintaining our intellectual property boundaries. 
 
 ### How you can still help:
 While we cannot accept code contributions, you are welcome to:

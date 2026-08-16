@@ -16,8 +16,19 @@ const (
 	CmdStyle    CommandType = "STYLE"
 	CmdEvent    CommandType = "EVENT"
 	CmdAspect   CommandType = "ASPECT"
+	CmdCurrency CommandType = "CURRENCY"
 	CmdWelcome  CommandType = "WELCOME"
 	CmdReset    CommandType = "RESET"
+	CmdWizard   CommandType = "WIZARD"
+	CmdTimeline CommandType = "TIMELINE"
+	CmdBudget   CommandType = "BUDGET"
+	CmdRSVP     CommandType = "RSVP"
+	CmdAddRSVP  CommandType = "ADDRSVP"
+	CmdHoncho   CommandType = "HONCHO"
+	CmdExport   CommandType = "EXPORT"
+	CmdPlanner  CommandType = "PLANNER"
+	CmdVerbose  CommandType = "VERBOSE"
+	CmdClear    CommandType = "CLEAR"
 	CmdHelp     CommandType = "HELP"
 	CmdUnknown  CommandType = "UNKNOWN"
 )
@@ -36,6 +47,14 @@ func Parse(input string) ParsedInput {
 	trimmed := strings.TrimSpace(input)
 	if trimmed == "" {
 		return ParsedInput{Type: CmdUnknown, RawInput: input}
+	}
+
+	cleanLower := strings.ToLower(trimmed)
+	if cleanLower == "clear" || cleanLower == "/clear" || cleanLower == "cls" || cleanLower == "/cls" {
+		return ParsedInput{
+			Type:     CmdClear,
+			RawInput: input,
+		}
 	}
 
 	// Default to /generate if no slash prefix is present
@@ -91,6 +110,14 @@ func Parse(input string) ParsedInput {
 			Args:         parts[1:],
 		}
 
+	case "/currency", "/curr", "/currency-code":
+		return ParsedInput{
+			Type:         CmdCurrency,
+			RawInput:     input,
+			EventDetails: argsString,
+			Args:         parts[1:],
+		}
+
 	case "/welcome", "/welcome-message", "/subheader", "/msg", "/wel":
 		return ParsedInput{
 			Type:         CmdWelcome,
@@ -102,6 +129,64 @@ func Parse(input string) ParsedInput {
 	case "/reset", "/restart", "/new", "/rest", "/rst":
 		return ParsedInput{
 			Type:     CmdReset,
+			RawInput: input,
+		}
+
+	case "/wizard", "/wiz":
+		return ParsedInput{
+			Type:     CmdWizard,
+			RawInput: input,
+		}
+
+	case "/timeline", "/schedule", "/itinerary":
+		return ParsedInput{
+			Type:     CmdTimeline,
+			RawInput: input,
+		}
+
+	case "/budget", "/finance", "/spend":
+		return ParsedInput{
+			Type:     CmdBudget,
+			RawInput: input,
+		}
+
+	case "/rsvp", "/rsvps", "/guests":
+		return ParsedInput{
+			Type:     CmdRSVP,
+			RawInput: input,
+		}
+
+	case "/add-rsvp", "/rsvp-add", "/addrsvp", "/new-rsvp", "/newrsvp":
+		return ParsedInput{
+			Type:     CmdAddRSVP,
+			RawInput: input,
+		}
+
+	case "/honcho", "/memory", "/cards":
+		return ParsedInput{
+			Type:     CmdHoncho,
+			RawInput: input,
+		}
+
+	case "/export", "/export-pdf", "/save-pdf":
+		return ParsedInput{
+			Type:         CmdExport,
+			RawInput:     input,
+			EventDetails: argsString,
+			Args:         parts[1:],
+		}
+
+	case "/planner", "/profile-name":
+		return ParsedInput{
+			Type:         CmdPlanner,
+			RawInput:     input,
+			EventDetails: argsString,
+			Args:         parts[1:],
+		}
+
+	case "/verbose", "/debug", "/logs":
+		return ParsedInput{
+			Type:     CmdVerbose,
 			RawInput: input,
 		}
 
@@ -135,6 +220,10 @@ func Parse(input string) ParsedInput {
 }
 
 func parseGenerateInput(input string) ParsedInput {
+	lower := strings.ToLower(strings.TrimSpace(input))
+	if lower == "add rsvp" || lower == "add a rsvp" || lower == "add new rsvp" || lower == "new rsvp" || lower == "record rsvp" || lower == "add guest rsvp" {
+		return ParsedInput{Type: CmdAddRSVP, RawInput: input}
+	}
 	welcomeMsg := ""
 	details := input
 

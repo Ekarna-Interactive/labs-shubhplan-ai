@@ -2,9 +2,18 @@ package generator
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"strings"
 )
+
+type PromptConcept struct {
+	ID      int      `json:"id"`
+	Title   string   `json:"title"`
+	Style   string   `json:"style"`
+	Palette []string `json:"palette"`
+	Prompt  string   `json:"prompt"`
+}
 
 // BasicBuilder is the open-source community implementation of PromptBuilder.
 type BasicBuilder struct{}
@@ -12,6 +21,72 @@ type BasicBuilder struct{}
 // NewBasicBuilder initializes a new community prompt builder.
 func NewBasicBuilder() *BasicBuilder {
 	return &BasicBuilder{}
+}
+
+func (b *BasicBuilder) ReadLocalContext(dataDir string) (string, string) {
+	guests, err := os.ReadFile("guests.md")
+	if err != nil {
+		guests, _ = os.ReadFile(dataDir + "/guests.md")
+	}
+
+	details, err := os.ReadFile("event_details.md")
+	if err != nil {
+		details, _ = os.ReadFile(dataDir + "/event_details.md")
+	}
+
+	return string(guests), string(details)
+}
+
+func (b *BasicBuilder) CompilePrompts(eventType, hosts, welcome, style string) []PromptConcept {
+	if hosts == "" {
+		hosts = "Ananya & Rohan"
+	}
+	if welcome == "" {
+		welcome = fmt.Sprintf("We joyfully invite you to celebrate the wedding of %s.", hosts)
+	}
+
+	styleName := "South Indian Royal Gold"
+	switch style {
+	case "mughal":
+		styleName = "Mughal Heritage & Floral"
+	case "paper_cut":
+		styleName = "Paper Cut Craftwork"
+	case "clay_3d":
+		styleName = "Modern Clay 3D Render"
+	case "minimalist":
+		styleName = "Minimalist Gold Leaf"
+	}
+
+	return []PromptConcept{
+		{
+			ID:      1,
+			Title:   "Royal Mandap & Temple Pillars Concept",
+			Style:   styleName,
+			Palette: []string{"#D4AF37", "#800020", "#FFFDD0"},
+			Prompt:  fmt.Sprintf("Standalone invitation card artwork celebrating the event of %s. Traditional mandap with carved temple pillars, marigold garlands, brass lamps, rich gold embroidery border on cream parchment background.", hosts),
+		},
+		{
+			ID:      2,
+			Title:   "Jasmine Arch & Silk Drapery Concept",
+			Style:   "Elegance Edition",
+			Palette: []string{"#FFFDD0", "#D4AF37", "#E63946"},
+			Prompt:  fmt.Sprintf("Luxurious invitation card for %s. %s Archway woven with fresh white jasmine and red roses, royal silk drapes in deep maroon, embossed gold foil typography.", hosts, strings.TrimSuffix(welcome, ".")),
+		},
+		{
+			ID:      3,
+			Title:   "Ornate Peacock & Geometrical Motif Concept",
+			Style:   "Heritage Fine Art",
+			Palette: []string{"#800020", "#FFD700", "#004225"},
+			Prompt:  fmt.Sprintf("Traditional ceremony invitation artwork for %s. Symmetrical peacock motifs, ornate hand-drawn kolam background, deep ruby red and antique gold color palette.", hosts),
+		},
+		{
+			ID:      4,
+			Title:   "Minimalist Lotus & Geometrical Frame Concept",
+			Style:   "Modern Minimal",
+			Palette: []string{"#111827", "#F59E0B", "#F3F4F6"},
+			Prompt:  fmt.Sprintf("Clean modern invitation design for %s. Blooming pink lotus flower illustration at base, gold geometric border, soft blush cream background, elegant serif typography hierarchy.", hosts),
+		},
+	}
 }
 
 // Compile constructs a standard clean prompt for event design generation defaulting to 9:16 aspect ratio.
@@ -149,7 +224,6 @@ func (b *BasicBuilder) CompileStructured(data EventData) ResponsePayload {
 	}
 }
 
-
 func sanitizeVisualPromptBody(prompt string) string {
 	cleaned := prompt
 
@@ -197,7 +271,6 @@ func sanitizeVisualPromptBody(prompt string) string {
 }
 
 func extractCardTextFromPrompt(prompt string) string {
-	// 1. Look for MANDATORY EVENT DETAILS marker
 	markerRegex := regexp.MustCompile(`(?i)(?:MANDATORY\s+EVENT\s+DETAILS|Event\s+details):\s*([^\.]+?)(?:\.|$|\n)`)
 	matchesMarker := markerRegex.FindStringSubmatch(prompt)
 	if len(matchesMarker) > 1 && strings.TrimSpace(matchesMarker[1]) != "" {
@@ -207,7 +280,6 @@ func extractCardTextFromPrompt(prompt string) string {
 		}
 	}
 
-	// 2. Look for quoted text e.g. text "Priya & Arjun" or text 'Priya & Arjun'
 	quotedRegex := regexp.MustCompile(`(?:text|with the text|titled)\s*["'“]([^"'”]+)["'”]`)
 	matches := quotedRegex.FindStringSubmatch(prompt)
 	if len(matches) > 1 && strings.TrimSpace(matches[1]) != "" {
@@ -217,7 +289,6 @@ func extractCardTextFromPrompt(prompt string) string {
 		}
 	}
 
-	// 3. Look for "for <Event Name> rendered/featuring/styled"
 	forRegex := regexp.MustCompile(`(?:for|of)\s+([A-Za-z0-9\s&',.-]+?)(?:\s+(?:rendered|styled|featuring|with|in\s+[A-Z]|on\s+a|central)|$)`)
 	matchesFor := forRegex.FindStringSubmatch(prompt)
 	if len(matchesFor) > 1 && strings.TrimSpace(matchesFor[1]) != "" {
@@ -230,7 +301,6 @@ func extractCardTextFromPrompt(prompt string) string {
 		}
 	}
 
-	// 4. Safe fallback: DO NOT truncate visual background descriptions into card text!
 	cleaned := stripMetaPhrases(prompt)
 	if !isVisualDescriptionText(cleaned) && len(cleaned) > 3 && len(cleaned) < 80 {
 		return cleaned
