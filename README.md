@@ -1,158 +1,197 @@
-# ✨ Shubh CLI — AI Event Invitation Design Terminal
+# ✨ Shubh Plan AI — Open-Source Multi-Agent Event Engine
 
-> **Status:** 🛠️ In Active Development  
-> **Public Repository:** [`github.com/Ekarna-Interactive/ShubhPlan-CLI`](https://github.com/Ekarna-Interactive/ShubhPlan-CLI)  
-> **Module:** `github.com/Ekarna-Interactive/ShubhPlan-CLI`
+<div align="center">
 
-**Shubh CLI** is an open-source, standalone terminal application and prompt generation engine specifically designed for **Event Invitation Design generation**. It generates creative visual prompt suggestions based on user-provided event details and renders bespoke invitation artwork using **Google Gemini Image Models** (such as **Nano Banana** and **Imagen**).
+[![Go Version](https://img.shields.io/badge/Go-1.26+-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://go.dev)
+[![Google ADK v2](https://img.shields.io/badge/Google%20ADK-v2.2.0-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://google.golang.org/adk)
+[![Honcho v3 REST](https://img.shields.io/badge/Honcho%20Memory-v3%20REST-7C3AED?style=for-the-badge)](https://honcho.dev)
+[![Wish SSH TUI](https://img.shields.io/badge/Wish%20SSH-Bubble%20Tea-FF4081?style=for-the-badge)](https://github.com/charmbracelet/wish)
+[![HTMX Web UI](https://img.shields.io/badge/HTMX-Tailwind%20CSS-38BDF8?style=for-the-badge&logo=htmx&logoColor=white)](https://htmx.org)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=for-the-badge&logo=apache)](LICENSE)
 
-Shubh CLI is the standalone, open-source version of **Shubh Plan** — an Agentic AI Event Planner & Designer Application.
+**An AI-Native, Single-Binary Multi-Agent Event Engine & Invitation Design Workspace built with Google ADK v2, Honcho Memory, Wish SSH TUI, and HTMX.**
 
----
+[Quickstart](#-quickstart) • [Architecture](#-architecture) • [Features](#-key-features) • [User Interfaces](#-user-interfaces) • [Multi-User Security](#-per-user-privacy--key-isolation) • [Environment Setup](#%EF%B8%8F-environment-configuration)
 
-## 🏗️ About Shubh CLI & Shubh Plan
-
-While **Shubh Plan** provides an agentic AI workspace for professional event planners and guests, **Shubh CLI** brings the core generative design engine straight to your command line:
-
-* **🎨 Prompt Suggestions Based on Event Details**: Automatically creates rich, context-aware visual design prompts derived from specific event details (Event Type, Host/Couple Names, Date, Venue/Location, Canvas Aspect Ratio, and Aesthetic Design Style).
-* **🤖 Google Gemini Image Generation**: Direct integration with Google's state-of-the-art image models — including **`gemini-3.1-flash-image` (Nano Banana)** and **Google Imagen (`imagen-4.0`)** — to generate print-ready digital invitations with clean layout plates and high visual adherence.
-* **⚡ Standalone & Open Source**: Zero complex server dependencies. Built as a lightweight Go terminal user interface (TUI) with local markdown profile persistence (`event_details.md`) and an instant browser preview engine.
+</div>
 
 ---
 
 ## 🌟 Key Features
 
-* **Guided Interactive Design Wizard**:
-  1. **API Key Verification**: Auto-detects `GEMINI_API_KEY`, prompts interactively on launch if missing, persists key to local `.env`, or runs in offline dry-run mode.
-  2. **Event Profile Setup**: Captures Event Type, Host/Couple Names, Date, and Location (persisted to `event_details.md`).
-  3. **Canvas Aspect Ratio**: Choose from 4 canvas layouts: `9:16` Mobile Story/Poster, `4:5` Social Feed/Portrait, `1:1` Square Card, or `16:9` Desktop Banner.
-  4. **Curated Aesthetic Styles**: Choose from 7 curated aesthetic presets (*South Indian Traditional*, *Paper Cut Art*, *Clay 3D Render*, *Pop Art*, *Mughal Palace*, *Minimalist Gold Foil*, *Loose Watercolor*) or type a custom style.
-  5. **AI Prompt Suggestions (`/suggest`)**: Dynamically generates 4 creative prompt options tailored to your exact event profile using Gemini LLM agents. Option 5 (`5` / `more`) generates 4 brand-new suggestions anytime.
-  6. **Generate & Preview**: Render high-fidelity invitation PNGs to `./output` and instantly open a live browser preview (`http://localhost:3000`).
-* **Persistent Event Profile (`event_details.md`)**: Automatically saves your event details and canvas settings. On subsequent runs, Shubh CLI reloads your active profile and jumps straight to style selection or generation.
-* **Interactive Slash Commands**:
-  * `/generate [details]` (Alias `/design`): Compiles clean prompt with card layout instructions, calls Gemini image models, saves rendered PNGs locally, and opens the live web preview.
-  * `/event [details]` (Alias `/details`, `/profile`): View or update event details, or jump straight to the Event Details setup step.
-  * `/aspect [ratio]` (Alias `/resolution`, `/res`, `/ratio`): Set aspect ratio (`9:16`, `4:5`, `1:1`, `16:9`) or open the ratio menu.
-  * `/style [name/number]` (Alias `/aesthetic`, `/preset`): Set aesthetic design style or open the style preset menu.
-  * `/suggest [theme]` (Alias `/ideas`): Generates 4 live AI prompt suggestions using Gemini LLM agents with strict style isolation.
-  * `/refine [changes]` (Alias `/edit`, `/modify`): Applies variation layers to active design prompts.
-  * `/reset` (Alias `/restart`, `/new`): Restart the guided setup wizard from Step 1.
-  * `/preview` (Alias `/web`, `/open`): Open local web browser preview (`http://localhost:3000`).
-  * `/config [key]` (Alias `/key`, `/apikey`): Inspect or update your Gemini API key from [Google AI Studio](https://aistudio.google.com/api-keys).
-  * `/help` (Alias `/h`, `/?`): Displays interactive command shortcuts manual.
-* **Automatic Web Preview Server**: Embedded background web server (`net/http`) built with **Pico CSS** that launches automatically at `http://localhost:3000` to inspect rendered invitation designs in your default browser.
+* **⚡ Unified Single Go Binary**: Operates 100% locally in Go with zero `node_modules` or JavaScript runtime requirements.
+* **🔑 Mandatory Key Onboarding & Multi-User Key Privacy**: First-time setup gate for both Web UI and SSH TUI. Web keys are stored safely inside browser `localStorage` and passed via request headers (`X-Gemini-API-Key`), while SSH keys live strictly in connection RAM. Global server `.env` files are never overwritten in multi-user mode.
+* **📋 Automatic Event Profile Setup & 1:1 Live Web/TUI Sync**: Verification check for `event_details.md` right after key setup. Real-time pre-filling of form inputs across Web UI and SSH TUI.
+* **🗓️ Interactive Calendar & Machine-Readable ISO Date Normalization**: Click-to-select graphical calendar date picker in Web UI, and robust multi-format date parser (`ParseAndNormalizeMachineDate`) in TUI converting user inputs into ISO 8601 `YYYY-MM-DD` strings.
+* **🪄 AI Welcome Subheader Generator**: Gemini AI-powered 4-style invitation welcome message copywriter (`/api/suggest-welcome`) with one-click insertion.
+* **🌙 Light Mode & Dark Mode Switcher**: High-contrast theme toggle with persistent `localStorage` theme preference.
+* **🤖 Inbuilt Lite Google ADK Engine**: Built natively with official [`google.golang.org/adk/v2/agent`](https://google.golang.org/adk) package across 5 specialized subagents:
+  * `MasterOrchestrator`: Multi-agent supervisor and task router.
+  * `GuestConcierge`: Guest RSVP management, dietary requirements & transport logistics.
+  * `TimelineAgent`: Chronological ceremony scheduling & dress codes.
+  * `BudgetAgent`: Spend metrics & industry category allocations.
+  * `VendorAgent`: Catering, photography, and decor vendor coordination.
+* **🧠 Honcho v3 Cloud & Local Memory**: Native HTTP REST driver for [`api.honcho.dev/v3`](https://honcho.dev) with automatic fallback to zero-dependency local JSON store (`./data/honcho_memory.json`).
+* **🔐 Dynamic Session Secret Handshake**: HMAC ephemeral token authentication (`POST /api/v1/session/handshake`) issuing 24-hour bearer tokens for all SSE streams.
+* **💻 Wish SSH Terminal UI (`:2222`)**: Zero-client install terminal experience built with `github.com/charmbracelet/wish` and `bubbletea`.
+* **🌐 HTMX Web UI (`:3000`)**: Single-page responsive web dashboard powered by HTMX + Tailwind CSS matching the full MagicPath design system.
 
 ---
 
-## 🖥️ Terminal User Interface (TUI) Dashboard
-
-Shubh CLI features a rich dual-pane terminal interface powered by **Bubble Tea** and **Lipgloss**:
-
-* **🏛️ Dual-Pane Split Layout**:
-  * **Main Viewport (Left)**: Interactive scrollable activity log, ASCII header banner, dynamic step prompts, and prompt suggestions.
-  * **Live Status Sidebar (Right)**: Real-time dashboard card displaying your Active Event Details, Selected Aspect Ratio, Design Style Preset, and API Model Status.
-* **📊 Visual Step Progress Bar**: Real-time step indicator (`API Setup` ➔ `Event Profile` ➔ `Resolution` ➔ `Style Preset` ➔ `AI Prompter`) keeping you informed of your setup progress.
-* **🎨 Palette & Badge Styling**: Styled with Imperial Gold (`#D4AF37`), Electric Teal (`#06B6D4`), and Royal Crimson (`#E11D48`) badges for `USER`, `AI`, `BUILDER`, `SYSTEM`, and `ERROR` events.
-* **⚡ Viewport Controls & Mouse Wheel**: Smooth viewport scrolling using mouse wheel, `PageUp`, `PageDown`, `Up`, `Down`, `Home`, and `End` keys.
-
----
-
-## 🤖 Supported Google Gemini Image Models
-
-Shubh CLI supports model selection across Google Gemini image models, allowing you to choose between high-fidelity production rendering, fast low-latency previews, and experimental multimodal media models.
-
-| Model Name | Key Strengths & Use Cases | Official Documentation Reference |
-| :--- | :--- | :--- |
-| `gemini-3.1-flash-image` / **Nano Banana** *(Default)* | Primary default high-fidelity production model. Exceptional visual prompt adherence, typography text rendering, and intricate detail. | [Gemini Image Generation Guide](https://ai.google.dev/gemini-api/docs/image-generation) |
-| `imagen-4.0-generate-001` | High-speed Imagen model optimized for rapid iterative draft previews. | [Imagen Model Versions](https://ai.google.dev/gemini-api/docs/imagen#model-versions) |
-| `imagen-4.0-fast-generate-001` | Ultra-fast multimodal media model for low-latency visual previewing. | [Generative Media Models](https://ai.google.dev/gemini-api/docs/models#generative_media_models) |
-
-### Configuring the Image Model
-
-You can configure the active image generation model via environment variables in your local `.env` file:
-
-```env
-GEMINI_API_KEY="your_gemini_api_key_here"
-GEMINI_IMAGE_MODEL="gemini-3.1-flash-image"
-```
-
-Official Google AI Documentation References:
-* [Google AI Gemini Image Generation Guide](https://ai.google.dev/gemini-api/docs/image-generation)
-* [Imagen Model Versions & Specifications](https://ai.google.dev/gemini-api/docs/imagen#model-versions)
-* [Gemini Generative Media Models Guide](https://ai.google.dev/gemini-api/docs/models#generative_media_models)
-
----
-
-## 🚀 Quickstart Guide
-
-### Prerequisites
-* **Go 1.22+** installed on your system.
-* (Optional) A free **Gemini API Key** set in your environment or `.env` file from [Google AI Studio](https://aistudio.google.com/api-keys) for live image rendering.
-
-### 1. Installation & Build
-
-```bash
-# Download dependencies
-go mod tidy
-
-# Build executable binary for Windows
-go build -o shubh-cli.exe main.go
-```
-
-### 2. Run the Application
-
-```bash
-# Run the binary executable
-.\shubh-cli.exe
-```
-
-### 3. Interactive Setup & API Key Management
-* **API Key Setup**: On first launch, if `GEMINI_API_KEY` is not set, Shubh CLI interactively prompts you to enter your key (which is automatically saved to `.env`). Pressing **Enter** skips key setup and runs in offline dry-run mode.
-* **Manage API Key Anytime**: You can inspect or update your key inside the TUI at any time using `/config <your-key>`.
-
----
-
-## 🛠️ Directory Structure
+## 🏗 Architecture
 
 ```plaintext
-├── .env.example          # Environment configuration template
-├── .gitignore            # Git exclusion rules (.env, *.exe, /output/)
-├── CONTRIBUTING.md       # Contributing guidelines & source-available policy
-├── LICENSE               # Apache License 2.0 open-source terms
-├── main.go               # Application entry point & template binder
-├── go.mod                # Module: github.com/Ekarna-Interactive/ShubhPlan-CLI
-├── /config
-│   ├── env.go            # Environment variable loader & output directory resolver
-│   └── event_profile.go  # Persistent event_details.md loader & serializer
-├── /generator
-│   ├── interface.go      # PromptBuilder interface contract
-│   ├── basic_builder.go  # Single-resolution prompt compiler with card text instructions
-│   └── prompter.go       # Live Gemini LLM AI Prompter Agent with strict style mandate
-├── /command
-│   └── parser.go         # Unified slash-command parser (/generate, /style, /aspect, /event, etc.)
-├── /server
-│   └── http.go           # Background net/http server & browser launcher
-├── /templates
-│   └── index.html        # Pico CSS live asset preview template with flex-centering
-└── /ui
-    ├── model.go          # Bubble Tea state & dual-pane layout model
-    ├── view.go           # Lipgloss terminal styling & dashboard cards
-    └── update.go         # Step event handling, Gemini API request executor, & viewport renderer
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                    UNIFIED OPEN-SOURCE BINARY (shubh-plan-open)                   │
+├────────────────────────────────────────┬─────────────────────────────────────────┤
+│    ⚡ WISH SSH TUI SERVER (Port 2222)   │      🌐 HTMX WEB UI SERVER (Port 3000) │
+│    • Bubble Tea Model & Keybindings    │      • Tailwind CSS + HTMX Fragments    │
+│    • Real-time Viewports & Wizards     │      • 4 Tabs matching MagicPath UI    │
+│    • Connection RAM Key Isolation      │      • Browser LocalStorage Keys       │
+├────────────────────────────────────────┴─────────────────────────────────────────┤
+│              INBUILT LITE GO ADK AGENT ENGINE & HONCHO v3 REST DRIVER            │
+│   • Inbuilt Multi-Agent Reasoning (Orchestrator, Timeline, Vendor, Budget, RSVP) │
+│   • Honcho v3 HTTP REST Driver (Direct `https://api.honcho.dev/v3/` API calls)   │
+│   • Inbuilt Local Memory Store Fallback (`data/honcho_memory.json` & `guests.md`)│
+│   • Real-Time SSE Token Streamer (`/api/v1/orchestrator/stream`)                 │
+│   • Ephemeral Session Secret Handshake (`/api/v1/session/handshake`)             │
+│   • Direct Gemini LLM & Imagen 3 API Drivers (`generator/prompter.go`)           │
+└──────────────────────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 🛡 Per-User Privacy & Key Isolation
+
+When deployed to a shared server, `shubh-plan-open` guarantees strict per-user key privacy:
+
+1. **Web UI Isolation**: Keys are saved strictly inside each user's browser `localStorage`. When User A closes their tab and reopens the site, their saved key auto-unlocks their workspace. User B accessing the server from their own browser will see an empty onboarding modal prompting for User B's key. User A's key is never written to disk or exposed to User B.
+2. **SSH TUI Isolation**: Each SSH connection runs in an isolated in-memory Go process. Keys entered during an SSH session live in RAM for that connection only. Supporting clients can also pass keys via SSH `SendEnv GEMINI_API_KEY`.
+
+---
+
+## 🖥 User Interfaces
+
+### 1. 🌐 HTMX Web Dashboard (`http://localhost:3000`)
+Features 4 interactive workspace tabs:
+1. **✨ AI Invitation Studio**: Event parameters, aesthetic theme presets (South Indian Gold, Mughal Heritage, Paper Cut 3D, Minimalist), Gemini prompt compilation, and direct `event_details.md` save button.
+2. **👥 Guest Roster & RSVPs**: Real-time headcount meters (Confirmed, Pending, Declined), dietary breakdown chips, interactive guest table, and CSV download.
+3. **📅 Event Timeline**: Chronological event session cards (Haldi, Sangeet, Muhurtham, Reception).
+4. **🤖 AI Concierge Copilot**: Real-time multi-agent chat interface connected via Server-Sent Events (SSE).
+
+### 2. 💻 Wish SSH Terminal UI (`ssh -p 2222 localhost`)
+Interactive terminal application supporting live tab switching, keybindings, RSVP wizards (`/add-rsvp`), event profile editing (`/planner`, `/event`), and key setup prompts.
+
+#### 🔑 SSH Client Public Key Authentication & Connection Methods
+
+Wish SSH uses standard SSH public key cryptography (`~/.ssh/id_ed25519` / `~/.ssh/id_rsa`).
+
+* **Step 1: Ensure you have an SSH Key Pair**:
+  ```bash
+  # Generate an Ed25519 SSH key pair if you haven't already
+  ssh-keygen -t ed25519 -C "your_email@example.com"
+  ```
+
+* **Step 2A: Interactive Connection (On-Screen Key Prompt)**:
+  ```bash
+  ssh -i ~/.ssh/id_ed25519 -p 2222 shubh-plan-ai.fly.dev
+  ```
+  *Prompts on-screen for Gemini and optional Honcho keys. Keys live in RAM for that connection only.*
+
+* **Step 2B: Direct One-Liner Connection (`SendEnv` Auto-Authentication)**:
+  ```bash
+  GEMINI_API_KEY="AIzaSy..." HONCHO_API_KEY="hnc_..." ssh -i ~/.ssh/id_ed25519 -o SendEnv=GEMINI_API_KEY -o SendEnv=HONCHO_API_KEY -p 2222 shubh-plan-ai.fly.dev
+  ```
+
+* **Step 3 (Optional): Add to `~/.ssh/config` for Instant Login**:
+  ```sshconfig
+  Host shubh
+      HostName shubh-plan-ai.fly.dev
+      Port 2222
+      IdentityFile ~/.ssh/id_ed25519
+      SendEnv GEMINI_API_KEY HONCHO_API_KEY
+  ```
+  Then connect anytime with a simple command: `shubh`
+
+#### 🖼️ SSH Live Web Design Preview & Port Forwarding
+
+SSH terminal users can preview their generated high-resolution invitation cards live on the Web UI:
+
+* **Method 1: Direct Web Preview URL (Production / Fly.io)**:
+  Open `http://shubh-plan-ai.fly.dev:3000` (or your deployment domain) in your browser. Any design generated with `/generate` in the TUI automatically populates in real-time in the **🖼️ Generated Invitation Cards** gallery.
+
+* **Method 2: SSH Local Port Forwarding (Recommended for Remote/Private Hosts)**:
+  Tunnel the remote Web Preview port (`3000`) to your local machine using the SSH `-L` flag:
+  ```bash
+  ssh -L 3000:localhost:3000 -i ~/.ssh/id_ed25519 -p 2222 shubh-plan-ai.fly.dev
+  ```
+  Then open [`http://localhost:3000`](http://localhost:3000) in your local browser. Whenever you execute `/generate` in your SSH terminal, your local browser auto-refreshes and displays the artwork with interactive **👁️ Full Design Lightbox** preview and **📥 PNG Download**!
+
+---
+
+## 🚀 Quickstart
+
+### Option A: Run with Docker Compose (Recommended)
+
+```bash
+# 1. Clone the public repository
+git clone https://github.com/Ekarna-Interactive/labs-shubhplan-ai.git
+cd labs-shubhplan-ai
+
+# 2. Launch with Docker Compose
+docker compose up -d
+```
+
+### Option B: Build from Source (Go 1.22+)
+
+1. **Clone & enter repository**:
+   ```bash
+   git clone https://github.com/Ekarna-Interactive/labs-shubhplan-ai.git
+   cd labs-shubhplan-ai
+   ```
+
+2. **Configure environment variables (Optional for server mode)**:
+   ```bash
+   cp .env.example .env
+   ```
+
+3. **Build and launch binary**:
+   ```bash
+   # Build single Go binary
+   go build -o shubh-plan-open .
+
+   # Launch in server mode (Web UI + SSH TUI Server)
+   ./shubh-plan-open --server
+   ```
+
+4. **Access the application**:
+   * **Web Dashboard**: Open [`http://localhost:3000`](http://localhost:3000)
+   * **Wish SSH Terminal**: Run `ssh -i ~/.ssh/id_ed25519 -p 2222 localhost`
+
+---
+
+## ⚙️ Environment Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `GEMINI_API_KEY` | *(Optional Server Default)* | Server-wide Google Gemini API Key. Web/SSH users can override with their own keys. |
+| `GEMINI_TEXT_MODEL` | `gemini-3.5-flash` | Primary text model for prompt compilation & copilot chat. |
+| `GEMINI_IMAGE_MODEL` | `gemini-3.1-flash-image` | Model for invitation card artwork generation. |
+| `HONCHO_API_KEY` | *(Optional)* | Honcho Cloud Memory key for sync with `api.honcho.dev/v3`. Defaults to local JSON store if empty. |
+| `HONCHO_APP_ID` | `shubh-plan-ai` | Honcho Application ID namespace. |
+| `SERVER_MODE` / `MULTI_USER` | `false` | Enable to prevent client browser keys from writing to global server `.env`. |
+| `PORT` | `3000` | HTTP Web UI server listening port. |
+| `SSH_PORT` | `2222` | Wish SSH Terminal server listening port. |
+| `SHUBH_DATA_DIR` | `./data` | Local directory for SQLite database, `guests.md`, and memory JSON. |
 
 ---
 
 ## 🤝 Contributing
 
-ShubhPlan-CLI is currently developed and maintained internally by Ekarna Interactive. 
-
-To maintain our rapid iteration cycles and keep the CLI tightly synchronized with the core Shubh Plan SaaS platform, **we are not accepting external pull requests or code contributions at this time.** 
-
-For more details, please see our [CONTRIBUTING.md](CONTRIBUTING.md).
+`shubh-plan-open` operates under a source-available / read-only open-source model. Please see the [CONTRIBUTING.md](CONTRIBUTING.md) guide for details.
 
 ---
 
-## 📜 License
+## 📄 License
 
-Distributed under the [Apache License 2.0](LICENSE). Built with ❤️ by Ekarna Interactive Technology LLP as part of the open-source **Shubh Plan** ecosystem.
+This open-source project is licensed under the **Apache License 2.0**. Copyright 2026 Ekarna Interactive Technology LLP. See the [LICENSE](LICENSE) file for details.

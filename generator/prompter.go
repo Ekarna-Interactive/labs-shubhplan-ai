@@ -7,12 +7,17 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
 
 // GenerateAIPromptSuggestions uses Gemini LLM to dynamically generate 4 creative prompts tailored to event details and style.
 func GenerateAIPromptSuggestions(apiKey string, eventType string, style string) ([]string, error) {
+	return GenerateAIPromptSuggestionsWithModel(apiKey, os.Getenv("GEMINI_TEXT_MODEL"), eventType, style)
+}
+
+func GenerateAIPromptSuggestionsWithModel(apiKey string, textModel string, eventType string, style string) ([]string, error) {
 	eType := strings.TrimSpace(eventType)
 	if eType == "" {
 		eType = "Auspicious Event Celebration"
@@ -227,7 +232,11 @@ DO NOT include quotation marks, intro headers, or bullet prefixes. Return EXACTL
 3. <Subheader 3>
 4. <Subheader 4>`, eType)
 
-	modelsToTry := []string{"gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-flash", "gemini-3.5-flash"}
+	textModel := os.Getenv("GEMINI_TEXT_MODEL")
+	modelsToTry := []string{"gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash"}
+	if textModel != "" {
+		modelsToTry = append([]string{textModel}, modelsToTry...)
+	}
 	var lastErr error
 
 	for _, modelName := range modelsToTry {

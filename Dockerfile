@@ -1,0 +1,38 @@
+# Stage 1: Build the Go binary
+FROM golang:1.22-alpine AS builder
+
+WORKDIR /app
+
+# Copy dependency manifests
+COPY go.mod ./
+RUN go mod download || true
+
+# Copy source code
+COPY . .
+
+# Compile binary statically
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags="-w -s" -o shubh-plan-open .
+
+# Stage 2: Minimal runtime image
+FROM alpine:latest
+
+RUN apk --no-cache add ca-certificates tzdata
+
+WORKDIR /app
+
+# Copy compiled binary from builder stage
+COPY --from=builder /app/shubh-plan-open /app/shubh-plan-open
+
+# Create application storage directories
+RUN mkdir -p /app/data /app/output
+
+EXPOSE 3000 2222
+
+ENV PORT=3000
+ENV SSH_PORT=2222
+ENV SERVER_MODE=true
+ENV MULTI_USER=true
+ENV SHUBH_DATA_DIR=/app/data
+ENV SHUBH_OUTPUT_DIR=/app/output
+
+CMD ["/app/shubh-plan-open", "--server"]

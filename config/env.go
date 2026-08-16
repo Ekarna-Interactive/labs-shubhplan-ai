@@ -9,10 +9,13 @@ import (
 
 // Config holds local runtime preferences for Shubh CLI
 type Config struct {
-	GeminiAPIKey string
-	ImageModel   string
-	OutputDir    string
-	Port         string
+	GeminiAPIKey     string
+	HonchoAPIKey     string
+	GeminiImageModel string
+	GeminiTextModel  string
+	ImageModel       string
+	OutputDir        string
+	Port             string
 }
 
 // LoadConfig loads environment configuration from .env files or system environment variables
@@ -20,7 +23,15 @@ func LoadConfig() Config {
 	loadDotEnv(".env")
 
 	key := getEnvClean("GEMINI_API_KEY")
-	modelName := getEnvClean("GEMINI_IMAGE_MODEL")
+	honchoKey := getEnvClean("HONCHO_API_KEY")
+	imageModel := getEnvClean("GEMINI_IMAGE_MODEL")
+	if imageModel == "" {
+		imageModel = "gemini-3.1-flash-image"
+	}
+	textModel := getEnvClean("GEMINI_TEXT_MODEL")
+	if textModel == "" {
+		textModel = "gemini-3.5-flash"
+	}
 	outDir := getEnvClean("SHUBH_OUTPUT_DIR")
 	if outDir == "" {
 		outDir = "./output"
@@ -34,10 +45,13 @@ func LoadConfig() Config {
 	_ = os.MkdirAll(outDir, 0755)
 
 	return Config{
-		GeminiAPIKey: key,
-		ImageModel:   modelName,
-		OutputDir:    outDir,
-		Port:         port,
+		GeminiAPIKey:     key,
+		HonchoAPIKey:     honchoKey,
+		GeminiImageModel: imageModel,
+		GeminiTextModel:  textModel,
+		ImageModel:       imageModel,
+		OutputDir:        outDir,
+		Port:             port,
 	}
 }
 
@@ -111,6 +125,39 @@ func SaveGeminiAPIKey(key string) error {
 		}
 	} else {
 		lines = append(lines, `GEMINI_API_KEY="`+cleanKey+`"`)
+	}
+
+	return os.WriteFile(envPath, []byte(strings.Join(lines, "\n")+"\n"), 0644)
+}
+
+// SaveHonchoAPIKey persists the Honcho API key to local .env file and environment
+func SaveHonchoAPIKey(key string) error {
+	cleanKey := strings.TrimSpace(key)
+	cleanKey = strings.Trim(cleanKey, `"'`)
+	_ = os.Setenv("HONCHO_API_KEY", cleanKey)
+
+	envPath := ".env"
+	lines := []string{}
+
+	if file, err := os.Open(envPath); err == nil {
+		scanner := bufio.NewScanner(file)
+		found := false
+		for scanner.Scan() {
+			line := scanner.Text()
+			if strings.HasPrefix(strings.TrimSpace(line), "HONCHO_API_KEY=") {
+				lines = append(lines, `HONCHO_API_KEY="`+cleanKey+`"`)
+				found = true
+			} else {
+				lines = append(lines, line)
+			}
+		}
+		_ = scanner.Err()
+		_ = file.Close()
+		if !found {
+			lines = append(lines, `HONCHO_API_KEY="`+cleanKey+`"`)
+		}
+	} else {
+		lines = append(lines, `HONCHO_API_KEY="`+cleanKey+`"`)
 	}
 
 	return os.WriteFile(envPath, []byte(strings.Join(lines, "\n")+"\n"), 0644)
