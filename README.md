@@ -15,6 +15,38 @@
 
 </div>
 
+```mermaid
+graph TD
+    classDef web fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
+    classDef tui fill:#0f172a,stroke:#ff4081,stroke-width:2px,color:#f8fafc;
+    classDef core fill:#1e1b4b,stroke:#818cf8,stroke-width:2px,color:#f8fafc;
+    classDef store fill:#064e3b,stroke:#34d399,stroke-width:2px,color:#f8fafc;
+
+    subgraph CLIENTS ["🌐 Dual User Interfaces"]
+        WEB["🌐 HTMX Web Dashboard<br/><i>(Port 3000 • Single-Page Dashboard)</i>"]:::web
+        TUI["💻 Wish SSH Terminal UI<br/><i>(Port 2222 • Zero-Client Install)</i>"]:::tui
+    end
+
+    subgraph CORE ["⚡ Unified Go ADK Engine"]
+        AUTH["🔐 Native Argon2id Auth Engine"]:::core
+        ADK["🤖 Google ADK v2 Multi-Agent Engine<br/><i>(Concierge, Timeline, Budget, RSVP)</i>"]:::core
+        SYNC["🔄 1:1 Live Real-Time Controls Sync"]:::core
+    end
+
+    subgraph DATA ["📦 Unified Data Persistence"]
+        JSON["📄 Local JSON & Markdown Store<br/><i>(event-details.json, itinerary.json, rsvps.json)</i>"]:::store
+        MEM["🧠 Smart Memory Driver<br/><i>(Local Vector Store & Honcho v3 Cloud)</i>"]:::store
+    end
+
+    WEB <--> AUTH
+    TUI <--> AUTH
+    WEB <--> ADK
+    TUI <--> ADK
+    ADK <--> SYNC
+    SYNC <--> JSON
+    ADK <--> MEM
+```
+
 ---
 
 ## 🚀 Quickstart
@@ -45,7 +77,7 @@ docker compose up -d
 ```bash
 # 1. Clone and enter repository directory
 git clone https://github.com/Ekarna-Interactive/labs-shubhplan-ai.git
-cd labs-shubhplan-ai/apps/shubh-plan-open
+cd labs-shubhplan-ai
 
 # 2. Build single Go binary
 go build -o shubh-plan-open .
@@ -67,13 +99,13 @@ go build -o shubh-plan-open .
 
 | Feature Area | Keyless / Offline Dry-Run Mode | Cloud Key Unlocked Mode | Required Key |
 | :--- | :--- | :--- | :--- |
-| **Authentication & Auth** | Full Native Argon2id Auth (`data/users.json`) | Full Native Auth & SSH Public Key Mapping | None *(Inbuilt)* |
-| **Event Profile & Itinerary** | Full local editing (`data/event-details.json` & `itinerary.json`) | Full 2-Way Sync with Markdown (`event_details.md`) | None *(Inbuilt)* |
-| **Guest RSVPs & Logistics** | Full headcount meters, dietary tracking & CSV export | Full headcount meters, dietary tracking & CSV export | None *(Inbuilt)* |
-| **Smart Memory** | Zero-config Local Vector Store (`./data/honcho_memory.json`) | Cloud Session & Vector Sync (`api.honcho.dev/v3`) | `HONCHO_API_KEY` *(Optional)* |
-| **Venue Search** | Inbuilt AI Venue Agent & Curated Venue Autocomplete | Live Google Maps / Places API Search & Metadata | `GOOGLE_PLACES_API_KEY` *(Optional)* |
-| **AI Invitation Artwork** | Concept compilation & layout preview | Full High-Res Imagen Artwork Generation | `GEMINI_API_KEY` *(Required for AI Images)* |
-| **AI Copilot Chat** | Basic command execution | Full Multi-Agent Reasoning via Google ADK v2 | `GEMINI_API_KEY` *(Required for Chat AI)* |
+| **Authentication & Accounts** | 🟢 Full Native Argon2id (`data/users.json`) | 🟢 Full Native Auth & SSH Key Mapping | ✅ None *(Inbuilt)* |
+| **Event Profile & Itinerary** | 🟢 Local Profile & Timeline Editor | 🟢 2-Way Sync with Markdown (`event_details.md`) | ✅ None *(Inbuilt)* |
+| **Guest RSVPs & Logistics** | 🟢 Headcount Meters & Dietary Export | 🟢 Headcount Meters & Dietary Export | ✅ None *(Inbuilt)* |
+| **Smart Memory Engine** | 🟢 Local Vector Store (`./data/honcho_memory.json`) | ☁️ Honcho Cloud Session Sync (`api.honcho.dev/v3`) | 🔑 `HONCHO_API_KEY` *(Optional)* |
+| **Venue Search & Maps** | 🟢 Inbuilt AI Venue Agent & Curated Autocomplete | ☁️ Live Google Places API Search & Metadata | 🔑 `GOOGLE_PLACES_API_KEY` *(Optional)* |
+| **AI Invitation Artwork** | 🟢 Concept Compilation & Layout Preview | 🤖 High-Res Gemini Imagen Generation | 🔑 `GEMINI_API_KEY` *(Required)* |
+| **AI Copilot Chat Engine** | 🟢 Basic Slash Commands & Layout Controls | 🤖 Multi-Agent Google ADK v2 Reasoning | 🔑 `GEMINI_API_KEY` *(Required)* |
 
 ---
 
