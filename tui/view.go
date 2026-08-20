@@ -304,7 +304,7 @@ func renderSidebarDashboard(m Model, width int) string {
 
 		honchoStatusStr := "Status: 🟡 Inbuilt Local Store"
 		honchoSubtext := "./data/honcho_memory.json"
-		if os.Getenv("HONCHO_API_KEY") != "" {
+		if m.Config.HonchoAPIKey != "" || os.Getenv("HONCHO_API_KEY") != "" {
 			honchoStatusStr = "Status: 🟢 Honcho Cloud Sync"
 			honchoSubtext = "api.honcho.dev/v3"
 		}
@@ -689,8 +689,8 @@ func formatLogsForViewport(logs []LogEntry, width int) string {
 			badge = badgeUser.Render(" USER ")
 		case "AI":
 			badge = badgeAI.Render(" AI PROMPTER ")
-		case "MasterOrchestrator", "Orchestrator":
-			badge = badgeOrchestrator.Render(" ORCHESTRATOR ")
+		case "AI Concierge", "MasterOrchestrator", "Orchestrator":
+			badge = badgeOrchestrator.Render(" AI CONCIERGE ")
 		case "planner_assistant", "PlannerAgent", "RootPlanner":
 			badge = badgeOrchestrator.Render(" PLANNER ASSISTANT ")
 		case "TimelineAgent", "timeline_agent":

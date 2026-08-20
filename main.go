@@ -27,6 +27,9 @@ func main() {
 		*serverMode = true
 	}
 
+	// 1. Load local .env config on boot
+	cfg := config.LoadConfig()
+
 	// Ensure directories exist
 	os.MkdirAll(*dataDir, 0755)
 	os.MkdirAll("./output", 0755)
@@ -69,7 +72,6 @@ func main() {
 	}
 
 	// Launch local interactive Bubble Tea TUI session
-	cfg := config.LoadConfig()
 	builder := generator.NewBasicBuilder()
 	p := tea.NewProgram(tui.InitialModel(cfg, builder), tea.WithAltScreen())
 

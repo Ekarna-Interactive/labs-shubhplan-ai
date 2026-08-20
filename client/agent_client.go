@@ -3,6 +3,7 @@ package client
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -48,10 +49,11 @@ func (c *AgentClient) StreamMessage(sessionID string, prompt string, plannerName
 func (c *AgentClient) SendMessageStreams(sessionID string, prompt string, plannerName string, plannerRole string, eventID string, eventContext string, eventHandler func(AgentStreamEvent)) error {
 	endpoint := fmt.Sprintf("%s/api/v1/orchestrator/stream", c.AgentServiceURL)
 	if plannerName == "" {
-		plannerName = "Gokul"
-	}
-	if plannerRole == "" {
-		plannerRole = "Lead Event Planner"
+		if plannerRole != "" {
+			plannerName = plannerRole
+		} else {
+			plannerName = "Event Planner"
+		}
 	}
 	if eventID == "" {
 		eventID = "evt-shubh-event"
@@ -105,22 +107,12 @@ func (c *AgentClient) SendMessageStreams(sessionID string, prompt string, planne
 		}
 	}
 
-	if err != nil {
-		eventHandler(AgentStreamEvent{
-			Type:    "content",
-			Agent:   "MasterOrchestrator",
-			Content: fmt.Sprintf("👋 Hello %s! Connected to Shubh Plan AI. Go ADK daemon note: %v", plannerName, err),
-		})
-		return nil
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		eventHandler(AgentStreamEvent{
-			Type:    "content",
-			Agent:   "MasterOrchestrator",
-			Content: fmt.Sprintf("👋 Hello %s! Received prompt: '%s'. Daemon HTTP status: %s", plannerName, prompt, resp.Status),
-		})
+	if err != nil || (resp != nil && resp.StatusCode != http.StatusOK) {
+		if resp != nil {
+			resp.Body.Close()
+		}
+		// In-process fallback when standalone daemon on 8082/8081 is not running
+		GetAgentEngine().StreamMultiAgentResponse(context.Background(), prompt, plannerName, eventContext, eventHandler)
 		return nil
 	}
 

@@ -144,18 +144,15 @@ func (e *AgentEngine) StreamMultiAgentResponse(ctx context.Context, prompt strin
 
 	apiKey := os.Getenv("GEMINI_API_KEY")
 
-	// 1. Master Orchestrator Event
+	// 1. Master Orchestrator Initialization
 	agentName := "MasterOrchestrator"
 	if e.orchestrator != nil {
 		agentName = e.orchestrator.Name()
 	}
 
-	handler(AgentStreamEvent{
-		Type:    "orchestrator",
-		Agent:   agentName,
-		Content: fmt.Sprintf("✨ [%s] Routing prompt for '%s': \"%s\"", agentName, plannerName, p),
-	})
-	time.Sleep(150 * time.Millisecond)
+	// Record User turn to Honcho Cloud
+	mem := GetHonchoManager()
+	mem.RecordTurnToHoncho("session-chat", plannerName, "Planner", p)
 
 	// 2. Multi-Agent Dispatch with Official Google ADK v2 Agents
 	if strings.Contains(lower, "rsvp") || strings.Contains(lower, "guest") || strings.Contains(lower, "diet") || strings.Contains(lower, "cab") {
@@ -170,7 +167,6 @@ func (e *AgentEngine) StreamMultiAgentResponse(ctx context.Context, prompt strin
 		})
 		time.Sleep(200 * time.Millisecond)
 
-		mem := GetHonchoManager()
 		cards := mem.GetPeerCards()
 		var cardSummaries []string
 		for name, card := range cards {
@@ -181,10 +177,13 @@ func (e *AgentEngine) StreamMultiAgentResponse(ctx context.Context, prompt strin
 			summaryStr = "No guest RSVPs recorded yet."
 		}
 
+		replyContent := fmt.Sprintf("🧠 [Honcho Recalled Guest Roster]:\n%s", summaryStr)
+		mem.RecordTurnToHoncho("session-chat", gName, "Guest Concierge", replyContent)
+
 		handler(AgentStreamEvent{
 			Type:    "content",
 			Agent:   gName,
-			Content: fmt.Sprintf("🧠 [Honcho Recalled Guest Roster]:\n%s", summaryStr),
+			Content: replyContent,
 		})
 		return
 	}
@@ -201,10 +200,24 @@ func (e *AgentEngine) StreamMultiAgentResponse(ctx context.Context, prompt strin
 		})
 		time.Sleep(200 * time.Millisecond)
 
+		var replyContent string
+		if apiKey != "" {
+			reply, err := generator.GenerateAIChatResponse(apiKey, plannerName, p, eventContext)
+			if err == nil && reply != "" {
+				replyContent = reply
+			}
+		}
+
+		if replyContent == "" {
+			replyContent = fmt.Sprintf("📊 [Budget Agent Metrics]:\n• Venue & Catering: 45%%\n• Photography & Media: 20%%\n• Decor & Floral: 20%%\n• Logistics & Guest Transfers: 15%%\n(Event Profile Context: %s)\n\n💡 How to update your budget:\nIn Terminal: Type /budget <amount> (e.g., /budget 300000 or /budget 2L) to set your custom budget, or edit Total Budget in event_details.md.", eventContext)
+		}
+
+		mem.RecordTurnToHoncho("session-chat", bName, "Budget Agent", replyContent)
+
 		handler(AgentStreamEvent{
 			Type:    "content",
 			Agent:   bName,
-			Content: fmt.Sprintf("📊 [Budget Agent Metrics]:\n• Venue & Catering: 45%%\n• Photography & Media: 20%%\n• Decor & Floral: 20%%\n• Logistics & Guest Transfers: 15%%\n(Updated for event context: %s)", eventContext),
+			Content: replyContent,
 		})
 		return
 	}
@@ -221,30 +234,36 @@ func (e *AgentEngine) StreamMultiAgentResponse(ctx context.Context, prompt strin
 		})
 		time.Sleep(200 * time.Millisecond)
 
+		replyContent := "⏱️ [Timeline Schedule]:\n1. Haldi & Chooda (10:00 AM - 01:00 PM) - Yellow Traditional\n2. Sangeet & Cocktail (07:00 PM - 11:30 PM) - Indo-Western Glam\n3. Muhurtham Wedding (08:30 AM - 12:30 PM) - Traditional Silk\n4. Reception (07:30 PM - 11:00 PM) - Royal Formal"
+		mem.RecordTurnToHoncho("session-chat", tName, "Timeline Agent", replyContent)
+
 		handler(AgentStreamEvent{
 			Type:    "content",
 			Agent:   tName,
-			Content: "⏱️ [Timeline Schedule]:\n1. Haldi & Chooda (10:00 AM - 01:00 PM) - Yellow Traditional\n2. Sangeet & Cocktail (07:00 PM - 11:30 PM) - Indo-Western Glam\n3. Muhurtham Wedding (08:30 AM - 12:30 PM) - Traditional Silk\n4. Reception (07:30 PM - 11:00 PM) - Royal Formal",
+			Content: replyContent,
 		})
 		return
 	}
 
-	// 3. Fallback Gemini AI Generation
+	// 3. Conversational Gemini AI Chat Response
 	if apiKey != "" {
-		suggestions, err := generator.GenerateAIPromptSuggestions(apiKey, "Wedding", "South Indian Traditional")
-		if err == nil && len(suggestions) > 0 {
+		reply, err := generator.GenerateAIChatResponse(apiKey, plannerName, p, eventContext)
+		if err == nil && reply != "" {
+			mem.RecordTurnToHoncho("session-chat", agentName, "Master Orchestrator", reply)
 			handler(AgentStreamEvent{
 				Type:    "content",
 				Agent:   agentName,
-				Content: fmt.Sprintf("🤖 [Google ADK & Gemini AI]:\n%s\n\n💡 Creative Concept Idea:\n%s", p, suggestions[0]),
+				Content: reply,
 			})
 			return
 		}
 	}
 
+	fallbackContent := fmt.Sprintf("👋 Hello %s! Processed via Google ADK v2 (`google.golang.org/adk/v2/agent`). Prompt: '%s'. Active event context loaded.", plannerName, p)
+	mem.RecordTurnToHoncho("session-chat", agentName, "Master Orchestrator", fallbackContent)
 	handler(AgentStreamEvent{
 		Type:    "content",
 		Agent:   agentName,
-		Content: fmt.Sprintf("👋 Hello %s! Processed via Google ADK v2 (`google.golang.org/adk/v2/agent`). Prompt: '%s'. Active event context loaded.", plannerName, p),
+		Content: fallbackContent,
 	})
 }

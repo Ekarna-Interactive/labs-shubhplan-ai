@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -81,6 +82,12 @@ func (m Model) handleParsedCommand(parsed command.ParsedInput) (Model, tea.Cmd) 
 
 		case command.CmdHoncho:
 			m.ActiveTab = TabRSVP
+			if !config.HasHonchoAPIKey() {
+				m.Logs = append(m.Logs, LogEntry{
+					Sender: "SYSTEM",
+					Text:   "🔑 Operating in Local Memory Mode (./data/honcho_memory.json). Configure HONCHO_API_KEY via '/config' or .env to enable live Cloud Sync at api.honcho.dev/v3.",
+				})
+			}
 			m.updateViewportContent()
 			return m, nil
 
@@ -172,6 +179,15 @@ func (m Model) handleParsedCommand(parsed command.ParsedInput) (Model, tea.Cmd) 
 			return m, nil
 
 		case command.CmdGenerate:
+			if !config.HasGeminiAPIKey() {
+				m.Logs = append(m.Logs, LogEntry{
+					Sender:  "WARNING",
+					Text:    "⚠️ GEMINI_API_KEY is not configured! Get your free key at https://aistudio.google.com/api-keys and run '/config <your_key>' to enable live AI generation.",
+					IsError: true,
+				})
+				return m, nil
+			}
+
 			eventDetailsToUse := strings.TrimSpace(parsed.EventDetails)
 			if eventDetailsToUse == "" {
 				eventDetailsToUse = m.EventDetails
@@ -220,6 +236,15 @@ func (m Model) handleParsedCommand(parsed command.ParsedInput) (Model, tea.Cmd) 
 			)
 
 		case command.CmdSuggest:
+			if !config.HasGeminiAPIKey() {
+				m.Logs = append(m.Logs, LogEntry{
+					Sender:  "WARNING",
+					Text:    "⚠️ GEMINI_API_KEY is not configured! Get your free key at https://aistudio.google.com/api-keys and run '/config <your_key>' to enable live AI generation.",
+					IsError: true,
+				})
+				return m, nil
+			}
+
 			m.Loading = true
 			m.StatusMsg = "Generating 4 AI theme suggestions..."
 			inputArg := strings.TrimSpace(parsed.EventDetails)
@@ -240,6 +265,15 @@ func (m Model) handleParsedCommand(parsed command.ParsedInput) (Model, tea.Cmd) 
 			)
 
 		case command.CmdRefine:
+			if !config.HasGeminiAPIKey() {
+				m.Logs = append(m.Logs, LogEntry{
+					Sender:  "WARNING",
+					Text:    "⚠️ GEMINI_API_KEY is not configured! Get your free key at https://aistudio.google.com/api-keys and run '/config <your_key>' to enable live AI generation.",
+					IsError: true,
+				})
+				return m, nil
+			}
+
 			if m.LastTitle == "" {
 				m.Logs = append(m.Logs, LogEntry{
 					Sender:  "WARNING",
@@ -315,6 +349,12 @@ func (m Model) handleParsedCommand(parsed command.ParsedInput) (Model, tea.Cmd) 
 					Text:   fmt.Sprintf("✨ Updated Event Profile and persisted to event_details.md:\n\"%s\"", details),
 				})
 			} else {
+				if profile, ok := config.LoadEventProfile(); ok && (profile.Venue != "" || profile.EventType != "") {
+					m.Logs = append(m.Logs, LogEntry{
+						Sender: "VENUE",
+						Text:   renderVenueDetailsTUI(profile),
+					})
+				}
 				m.Step = StepEventType
 				m.OptionIndex = 0
 				m.TextInput.Placeholder = "Use ↑/↓ arrow keys to select, press Enter to confirm, or type event type"
@@ -498,18 +538,48 @@ func (m Model) handleParsedCommand(parsed command.ParsedInput) (Model, tea.Cmd) 
 			return m, nil
 
 		case command.CmdHelp:
-			helpText := `Available Slash Commands:
-  • /generate [event details] (Compiles & generates design)
-  • /event [details] (View or update active event details in event_details.md)
-  • /welcome [text] (View, set, or generate AI welcome message subheaders)
-  • /aspect [ratio] (Set resolution: 9:16 Mobile, 4:5 Social, 1:1 Square, 16:9 Desktop)
-  • /style [preset/name] (Select aesthetic design style e.g. /style paper cut)
-  • /suggest [theme] (Generate AI prompt suggestions)
-  • /refine [changes] (Modify active design)
-  • /preview (Launch local web preview browser)
-  • /config [key] (View or set your Gemini API key from https://aistudio.google.com/api-keys)
-  • /reset (Restart guided setup wizard)
-  • /help (Show this reference guide)`
+			helpText := `📌 Main Slash Commands:
+  • /generate [details] - Compile context & generate invitation design
+  • /event [details]    - View/update profile details in event_details.md
+  • /budget [amount]   - View or set estimated budget (e.g. /budget 300000)
+  • /rsvp              - Open Tab 4 (Guest Roster & Dietary Facts)
+  • /add-rsvp          - Add/update guest RSVP & transport details
+  • /timeline          - Open Tab 2 (Chronological Ceremony Schedule)
+  • /currency [code]   - Set default currency (e.g. /currency INR, USD)
+  • /welcome [text]    - View or set AI welcome message subheaders
+  • /aspect [ratio]    - Set aspect ratio (9:16, 4:5, 1:1, 16:9)
+  • /style [preset]    - Select aesthetic design style (e.g. /style paper cut)
+  • /suggest [theme]   - Generate AI prompt suggestions
+  • /refine [changes]  - Apply tweaks to active design
+  • /preview           - Open local web preview browser
+  • /honcho            - Inspect Honcho Cloud AI memory cards
+  • /planner [name]    - Update event planner name & role
+  • /export            - Export design or event details
+  • /wizard            - Launch interactive step-by-step setup wizard
+  • /config [key]      - View or set Gemini API key
+  • /clear             - Clear terminal log screen
+  • /reset             - Restart guided setup wizard
+  • /help              - Display this reference guide
+
+🔗 Command Aliases & Shortcuts:
+  • /design, /create, /gen      --> /generate
+  • /edit, /modify              --> /refine
+  • /ideas, /theme, /sug        --> /suggest
+  • /preset, /aesthetic, /sty   --> /style
+  • /profile, /details          --> /event
+  • /ratio, /res, /resolution   --> /aspect
+  • /curr, /currency-code       --> /currency
+  • /subheader, /msg            --> /welcome
+  • /finance, /spend            --> /budget
+  • /rsvps, /guests             --> /rsvp
+  • /addrsvp, /new-rsvp         --> /add-rsvp
+  • /schedule, /itinerary       --> /timeline
+  • /memory, /cards             --> /honcho
+  • /wiz                        --> /wizard
+  • /web, /open                 --> /preview
+  • /key, /apikey               --> /config
+  • /cls                        --> /clear
+  • /h, /?                      --> /help`
 			m.Logs = append(m.Logs, LogEntry{Sender: "SYSTEM", Text: helpText})
 			return m, nil
 
@@ -892,7 +962,7 @@ func (m Model) handleParsedCommand(parsed command.ParsedInput) (Model, tea.Cmd) 
 			_ = config.SaveStructuredEventProfileWithBudget(m.EventType, m.HostNames, m.EventDate, m.Venue, m.Currency, m.WelcomeMessage, m.SelectedAspect, m.PlannerName, m.PlannerRole, m.BudgetSummary.TotalEstimated, m.RSVPOverview.TotalGuests)
 		}
 		m.Loading = true
-		m.StatusMsg = "Routing prompt to Go ADK Orchestrator & Honcho memory..."
+		m.StatusMsg = "Routing prompt to AI Assistant & Smart Memory..."
 		return m, tea.Batch(
 			m.Spinner.Tick,
 			m.runAgentCmd(rawText),
@@ -916,4 +986,40 @@ func (m Model) handleParsedCommand(parsed command.ParsedInput) (Model, tea.Cmd) 
 			m.runGenerationCmd(compiled),
 		)
 	}
+}
+
+func renderVenueDetailsTUI(p config.EventProfile) string {
+	vd := p.VenueDetails
+	venueName := p.Venue
+	if venueName == "" {
+		venueName = vd.PrimaryVenue
+	}
+	if venueName == "" {
+		venueName = "Main Event Venue"
+	}
+	addr := p.VenueAddress
+	if addr == "" {
+		addr = vd.VenueFormattedAddress
+	}
+	if addr == "" {
+		addr = vd.Address
+	}
+	if addr == "" {
+		addr = "Venue address pending selection."
+	}
+	placeID := vd.PlaceID
+	if placeID == "" {
+		placeID = "TBD"
+	}
+
+	mapURL := vd.GoogleMapURL
+	if mapURL == "" && venueName != "" {
+		mapURL = "https://maps.google.com/?q=" + url.QueryEscape(venueName+" "+addr)
+	}
+	dirURL := vd.GoogleMapDirectionsURL
+	if dirURL == "" && venueName != "" {
+		dirURL = "https://www.google.com/maps/dir/?api=1&destination=" + url.QueryEscape(venueName+" "+addr)
+	}
+
+	return fmt.Sprintf("📍 EVENT VENUE & LOCATION INTELLIGENCE (data/event-details.json)\n──────────────────────────────────────────────────────────────────\n🏛️  Venue Name:   %s\n📍  Full Address: %s\n🗺️  Google Maps:  %s\n🚗  Directions:  %s\n🔑  Place ID:    %s", venueName, addr, mapURL, dirURL, placeID)
 }

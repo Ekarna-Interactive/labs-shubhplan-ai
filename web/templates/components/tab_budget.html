@@ -1,0 +1,16 @@
+<!-- TAB 2: GUEST ROSTER & RSVPS -->
+<div id="section-guests" class="hidden space-y-6">
+    <div class="flex justify-between items-center bg-slate-950/40 p-4 border border-slate-800 rounded-xl">
+        <div>
+            <h2 class="text-base font-semibold text-amber-400">Guest Roster & Memory Records</h2>
+            <p class="text-xs text-slate-400">Live guest headcount, dietary requirements, and cab transport requests</p>
+        </div>
+        <button hx-get="/api/guests" hx-target="#guest-list-container" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium">
+            🔄 Refresh Roster
+        </button>
+    </div>
+
+    <div id="guest-list-container" hx-get="/api/guests" hx-trigger="load">
+        <div class="text-center py-8 text-xs text-slate-400">Loading guest roster records...</div>
+    </div>
+</div>
