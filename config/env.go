@@ -26,11 +26,11 @@ func LoadConfig() Config {
 	honchoKey := getEnvClean("HONCHO_API_KEY")
 	imageModel := getEnvClean("GEMINI_IMAGE_MODEL")
 	if imageModel == "" {
-		imageModel = "gemini-3.1-flash-image"
+		imageModel = getEnvClean("GEMINI_FALLBACK_IMAGE_MODEL")
 	}
 	textModel := getEnvClean("GEMINI_TEXT_MODEL")
 	if textModel == "" {
-		textModel = "gemini-3.5-flash"
+		textModel = getEnvClean("GEMINI_FALLBACK_TEXT_MODEL")
 	}
 	outDir := getEnvClean("SHUBH_OUTPUT_DIR")
 	if outDir == "" {
@@ -53,6 +53,18 @@ func LoadConfig() Config {
 		OutputDir:        outDir,
 		Port:             port,
 	}
+}
+
+// HasGeminiAPIKey returns true if a Gemini API Key is configured
+func HasGeminiAPIKey() bool {
+	cfg := LoadConfig()
+	return cfg.GeminiAPIKey != "" || getEnvClean("GOOGLE_API_KEY") != ""
+}
+
+// HasHonchoAPIKey returns true if a Honcho Cloud API Key is configured
+func HasHonchoAPIKey() bool {
+	cfg := LoadConfig()
+	return cfg.HonchoAPIKey != ""
 }
 
 func loadDotEnv(filename string) {
@@ -158,6 +170,51 @@ func SaveHonchoAPIKey(key string) error {
 		}
 	} else {
 		lines = append(lines, `HONCHO_API_KEY="`+cleanKey+`"`)
+	}
+
+	return os.WriteFile(envPath, []byte(strings.Join(lines, "\n")+"\n"), 0644)
+}
+
+// GetPlacesAPIKey returns the Google Places API Key if configured
+func GetPlacesAPIKey() string {
+	key := getEnvClean("GOOGLE_PLACES_API_KEY")
+	if key == "" {
+		key = getEnvClean("GOOGLE_MAPS_API_KEY")
+	}
+	if key == "" {
+		key = getEnvClean("PLACES_API_KEY")
+	}
+	return key
+}
+
+// SavePlacesAPIKey persists the Places API key to local .env file and environment
+func SavePlacesAPIKey(key string) error {
+	cleanKey := strings.TrimSpace(key)
+	cleanKey = strings.Trim(cleanKey, `"'`)
+	_ = os.Setenv("GOOGLE_PLACES_API_KEY", cleanKey)
+
+	envPath := ".env"
+	lines := []string{}
+
+	if file, err := os.Open(envPath); err == nil {
+		scanner := bufio.NewScanner(file)
+		found := false
+		for scanner.Scan() {
+			line := scanner.Text()
+			if strings.HasPrefix(strings.TrimSpace(line), "GOOGLE_PLACES_API_KEY=") {
+				lines = append(lines, `GOOGLE_PLACES_API_KEY="`+cleanKey+`"`)
+				found = true
+			} else {
+				lines = append(lines, line)
+			}
+		}
+		_ = scanner.Err()
+		_ = file.Close()
+		if !found {
+			lines = append(lines, `GOOGLE_PLACES_API_KEY="`+cleanKey+`"`)
+		}
+	} else {
+		lines = append(lines, `GOOGLE_PLACES_API_KEY="`+cleanKey+`"`)
 	}
 
 	return os.WriteFile(envPath, []byte(strings.Join(lines, "\n")+"\n"), 0644)

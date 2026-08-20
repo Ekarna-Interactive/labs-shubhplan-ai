@@ -56,7 +56,7 @@ func (m Model) runWelcomeSuggestionCmd(eventType string) tea.Cmd {
 
 func (m Model) runGenerationCmd(payload generator.ResponsePayload) tea.Cmd {
 	return func() tea.Msg {
-		filename := fmt.Sprintf("shubh_design_%d.png", time.Now().Unix())
+		filename := fmt.Sprintf("shubh_design_%s_%d.png", m.SessionID, time.Now().Unix())
 		outPath := filepath.Join(m.Config.OutputDir, filename)
 
 		var err error
@@ -126,14 +126,12 @@ func createPlaceholderImage(outPath string, title string, welcome string) error 
 }
 
 func generateGeminiImage(apiKey string, modelName string, prompt string, aspect string, outPath string) error {
-	if modelName == "" {
-		modelName = "gemini-3.1-flash-image"
+	modelsToTry := generator.GetStrictEnvImageModels()
+	if len(modelsToTry) == 0 && modelName != "" {
+		modelsToTry = []string{modelName}
 	}
-
-	modelsToTry := []string{
-		modelName,
-		"gemini-3.1-flash-image",
-		"gemini-2.5-flash-image",
+	if len(modelsToTry) == 0 {
+		return fmt.Errorf("No Gemini image models configured in environment (GEMINI_IMAGE_MODEL / GEMINI_FALLBACK_IMAGE_MODEL)")
 	}
 
 	var lastErr error

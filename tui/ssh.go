@@ -3,16 +3,21 @@ package tui
 import (
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 	"strings"
 
+	"github.com/Ekarna-Interactive/labs-shubhplan-ai/client"
 	"github.com/Ekarna-Interactive/labs-shubhplan-ai/config"
 	"github.com/Ekarna-Interactive/labs-shubhplan-ai/generator"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
 	bm "github.com/charmbracelet/wish/bubbletea"
 	lm "github.com/charmbracelet/wish/logging"
+	"github.com/muesli/termenv"
 )
 
 type SSHServer struct {
@@ -24,15 +29,36 @@ func NewSSHServer(port int) *SSHServer {
 }
 
 func (s *SSHServer) Start() error {
-	server, err := wish.NewServer(
+	options := []ssh.Option{
 		wish.WithAddress(fmt.Sprintf("0.0.0.0:%d", s.port)),
-		wish.WithHostKeyPath("data/term_info_ed25519"),
+		func(srv *ssh.Server) error {
+			srv.LocalPortForwardingCallback = func(ctx ssh.Context, destinationHost string, destinationPort uint32) bool {
+				return true
+			}
+			srv.ChannelHandlers = map[string]ssh.ChannelHandler{
+				"session":      ssh.DefaultSessionHandler,
+				"direct-tcpip": ssh.DirectTCPIPHandler,
+			}
+			return nil
+		},
 		wish.WithMiddleware(
 			bm.Middleware(teaHandler),
 			lm.Middleware(),
 		),
-	)
+	}
+
+	hostKeyPEM := strings.TrimSpace(os.Getenv("SSH_HOST_KEY"))
+	if hostKeyPEM != "" {
+		options = append(options, wish.WithHostKeyPEM([]byte(hostKeyPEM)))
+	} else {
+		_ = os.MkdirAll("data", 0755)
+		hostKeyPath := filepath.Join("data", "term_info_ed25519")
+		options = append(options, wish.WithHostKeyPath(hostKeyPath))
+	}
+
+	server, err := wish.NewServer(options...)
 	if err != nil {
+		log.Printf("⚠️ Wish server creation error: %v", err)
 		return err
 	}
 
@@ -53,6 +79,17 @@ func teaHandler(s ssh.Session) (tea.Model, []tea.ProgramOption) {
 			cfg.HonchoAPIKey = strings.TrimPrefix(env, "HONCHO_API_KEY=")
 		}
 	}
+
+	if cfg.GeminiAPIKey != "" {
+		_ = os.Setenv("GEMINI_API_KEY", cfg.GeminiAPIKey)
+	}
+	if cfg.HonchoAPIKey != "" {
+		_ = os.Setenv("HONCHO_API_KEY", cfg.HonchoAPIKey)
+		client.GetHonchoManager().SetAPIKey(cfg.HonchoAPIKey)
+	}
+
+	// Force 24-bit TrueColor rendering for Lipgloss styles over Wish SSH
+	lipgloss.SetColorProfile(termenv.TrueColor)
 
 	builder := generator.NewBasicBuilder()
 

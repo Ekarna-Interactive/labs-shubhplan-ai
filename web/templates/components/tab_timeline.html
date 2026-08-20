@@ -1,0 +1,95 @@
+<!-- TAB 3: EVENT ITINERARY & TIMELINE -->
+<div id="section-itinerary" class="hidden space-y-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <h2 class="text-base font-semibold text-amber-400">📅 Dynamic Event Timeline & Run-of-Show</h2>
+            <p class="text-xs text-slate-400 mt-0.5">Chronological ceremony itinerary stored in <code>data/itinerary.json</code> & synced with TUI</p>
+        </div>
+        <button onclick="fetchItineraryItems()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold flex items-center space-x-1 transition-all">
+            <span>🔄 Refresh Timeline</span>
+        </button>
+    </div>
+
+    <!-- Venue & Location Intelligence Hero Showcase Card -->
+    <div id="venue-intelligence-card" class="relative overflow-hidden w-full bg-slate-900 border border-amber-500/30 rounded-2xl shadow-2xl transition-all">
+        <!-- Background Image & Gradient Backdrop -->
+        <div class="relative min-h-[160px] md:min-h-[180px] w-full flex flex-col justify-end p-5 md:p-6 bg-cover bg-center" id="venue-card-hero-bg" style="background-image: linear-gradient(to top, rgba(15, 23, 42, 0.96) 20%, rgba(15, 23, 42, 0.65) 100%), url('https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1200&q=80');">
+            
+            <div class="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div class="flex items-start space-x-4 max-w-3xl">
+                    <!-- Photo Thumbnail -->
+                    <div class="hidden sm:block shrink-0 w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden border-2 border-amber-400/40 shadow-xl bg-slate-950">
+                        <img id="venue-card-thumb" src="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=300&q=80" alt="Venue Photo" class="w-full h-full object-cover">
+                    </div>
+                    <div>
+                        <div class="flex flex-wrap items-center gap-2 mb-1.5">
+                            <span class="text-xs px-2.5 py-0.5 bg-amber-500/20 border border-amber-500/40 text-amber-300 rounded-full font-bold uppercase tracking-wider">📍 Primary Location</span>
+                            <span id="venue-card-verified" class="text-xs px-2.5 py-0.5 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 rounded-full font-semibold">Verified Location</span>
+                        </div>
+                        <h3 id="venue-card-name" class="text-lg md:text-xl font-bold text-white tracking-tight drop-shadow-md">Main Event Venue</h3>
+                        <p id="venue-card-address" class="text-xs md:text-sm text-slate-200 mt-1 leading-relaxed max-w-2xl drop-shadow-sm">Select venue in Tab 1 to auto-load full address & directions</p>
+                    </div>
+                </div>
+
+                <!-- Action Buttons & Live Event Weather -->
+                <div class="flex flex-col items-start md:items-end gap-2.5 shrink-0">
+                    <div id="venue-card-weather" class="px-3.5 py-1.5 bg-slate-950/80 backdrop-blur-md border border-amber-400/30 rounded-xl text-xs font-semibold text-amber-300 shadow-lg flex items-center space-x-1.5">
+                        <span>🌤️ Event Day Forecast: 28°C • Pleasant</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <a id="venue-card-map-btn" href="#" target="_blank" class="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center space-x-1.5 transition-all shadow-lg hover:shadow-amber-500/20">
+                            <span>🗺️ Open Maps</span>
+                        </a>
+                        <a id="venue-card-dir-btn" href="#" target="_blank" class="px-3.5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs flex items-center space-x-1.5 transition-all shadow-lg hover:shadow-emerald-500/20">
+                            <span>🚗 Directions</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Itinerary List Container -->
+    <div id="itinerary-list-container" class="space-y-3">
+        <div class="p-4 bg-slate-900 border border-slate-800 rounded-xl text-center text-xs text-slate-400">Loading event itinerary...</div>
+    </div>
+
+    <!-- Add New Ceremony Sub-Event Form -->
+    <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider">➕ Add Ceremony Sub-Event / Schedule Slot</h3>
+            <span class="text-[11px] text-slate-400 font-mono">Syncs to data/itinerary.json</span>
+        </div>
+        <form onsubmit="submitAddItineraryItem(event)" class="grid grid-cols-1 md:grid-cols-12 gap-3">
+            <div class="md:col-span-4">
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Ceremony / Sub-Event Title *</label>
+                <input type="text" id="itin-title" required placeholder="e.g. Sangeet & Musical Evening" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-amber-500">
+            </div>
+            <div class="md:col-span-3">
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Date *</label>
+                <input type="date" id="itin-date" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-amber-500">
+            </div>
+            <div class="md:col-span-3">
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Time Slot *</label>
+                <input type="text" id="itin-time" required placeholder="e.g. 06:30 PM - 10:00 PM" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-amber-500">
+            </div>
+            <div class="md:col-span-2">
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Dress Code</label>
+                <input type="text" id="itin-dress" placeholder="e.g. Indo-Western" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-amber-500">
+            </div>
+            <div class="md:col-span-6">
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Location / Mandap</label>
+                <input type="text" id="itin-location" placeholder="e.g. Main Ballroom & Lawn" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-amber-500">
+            </div>
+            <div class="md:col-span-4">
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Description / Notes</label>
+                <input type="text" id="itin-desc" placeholder="e.g. Choreographed dance performances" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-amber-500">
+            </div>
+            <div class="md:col-span-2 flex items-end">
+                <button type="submit" class="w-full py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-lg text-xs shadow-md transition-all">
+                    Add Slot
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

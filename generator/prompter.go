@@ -3,6 +3,7 @@ package generator
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,7 +11,192 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/Ekarna-Interactive/labs-shubhplan-ai/config"
 )
+
+// GetStrictEnvModels returns models defined strictly in environment variables (no hardcoded fallback models in code)
+func GetStrictEnvModels() []string {
+	config.LoadConfig()
+	var models []string
+	primary := strings.TrimSpace(os.Getenv("GEMINI_TEXT_MODEL"))
+	fallback := strings.TrimSpace(os.Getenv("GEMINI_FALLBACK_TEXT_MODEL"))
+
+	if primary != "" {
+		models = append(models, primary)
+	}
+	if fallback != "" && fallback != primary {
+		models = append(models, fallback)
+	}
+	return models
+}
+
+// GetStrictEnvImageModels returns image models defined strictly in environment variables
+func GetStrictEnvImageModels() []string {
+	config.LoadConfig()
+	var models []string
+	primary := strings.TrimSpace(os.Getenv("GEMINI_IMAGE_MODEL"))
+	fallback := strings.TrimSpace(os.Getenv("GEMINI_FALLBACK_IMAGE_MODEL"))
+
+	if primary != "" {
+		models = append(models, primary)
+	}
+	if fallback != "" && fallback != primary {
+		models = append(models, fallback)
+	}
+
+	return models
+}
+
+type PromptIdea struct {
+	ThemeTitle string `json:"themeTitle"`
+	PromptText string `json:"promptText"`
+	Style      string `json:"style"`
+}
+
+// GenerateAIPromptIdeas calls Gemini LLM to generate 4 distinct prompt concepts with theme titles & visual prompts
+func GenerateAIPromptIdeas(apiKey string, eventType string, style string) ([]PromptIdea, error) {
+	eType := strings.TrimSpace(eventType)
+	if eType == "" {
+		eType = "Auspicious Event Celebration"
+	}
+	if style == "" {
+		style = "South Indian Royal Gold"
+	}
+
+	if apiKey == "" {
+		return GenerateFallbackPromptIdeas(eType, style), fmt.Errorf("GEMINI_API_KEY is not set. Using offline fallback prompt ideas.")
+	}
+
+	promptMsg := fmt.Sprintf(`You are an expert AI invitation designer agent.
+EVENT TYPE: %s
+STYLE: %s
+
+Generate EXACTLY 4 distinct, highly creative invitation design concept ideas in the requested '%s' style for a '%s'.
+For each concept option, provide a catchy 2-4 word "themeTitle" (e.g. "Pastel Celestial Cradle", "Golden Marigold Archway", "Royal Mandap Cutwork") and a detailed visual "promptText" describing the background scene.
+
+Return JSON array format:
+[
+  {
+    "themeTitle": "Creative Theme Name",
+    "promptText": "Detailed visual background scene prompt text..."
+  }
+]`, eType, style, style, eType)
+
+	modelsToTry := GetStrictEnvModels()
+	for _, modelName := range modelsToTry {
+		url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", modelName, apiKey)
+
+		payloadMap := map[string]interface{}{
+			"contents": []map[string]interface{}{
+				{"parts": []map[string]interface{}{{"text": promptMsg}}},
+			},
+			"generationConfig": map[string]interface{}{
+				"temperature": 0.9,
+			},
+		}
+
+		bodyBytes, _ := json.Marshal(payloadMap)
+		req, err := http.NewRequestWithContext(context.Background(), "POST", url, bytes.NewBuffer(bodyBytes))
+		if err != nil {
+			continue
+		}
+		req.Header.Set("Content-Type", "application/json")
+
+		client := &http.Client{Timeout: 12 * time.Second}
+		resp, err := client.Do(req)
+		if err != nil {
+			continue
+		}
+
+		if resp.StatusCode == http.StatusOK {
+			rawBytes, _ := io.ReadAll(resp.Body)
+			resp.Body.Close()
+
+			var resStruct struct {
+				Candidates []struct {
+					Content struct {
+						Parts []struct {
+							Text string `json:"text"`
+						} `json:"parts"`
+					} `json:"content"`
+				} `json:"candidates"`
+			}
+			if err := json.Unmarshal(rawBytes, &resStruct); err == nil && len(resStruct.Candidates) > 0 {
+				txt := resStruct.Candidates[0].Content.Parts[0].Text
+				txt = strings.TrimPrefix(strings.TrimSpace(txt), "```json")
+				txt = strings.TrimPrefix(txt, "```")
+				txt = strings.TrimSuffix(txt, "```")
+				txt = strings.TrimSpace(txt)
+
+				var ideas []PromptIdea
+				if err := json.Unmarshal([]byte(txt), &ideas); err == nil && len(ideas) >= 4 {
+					for i := range ideas {
+						ideas[i].Style = style
+					}
+					return ideas[:4], nil
+				}
+			}
+		} else {
+			resp.Body.Close()
+		}
+	}
+
+	return GenerateFallbackPromptIdeas(eType, style), nil
+}
+
+func getThemeTitlesForStyle(style string, eventType string) []string {
+	s := strings.ToLower(style)
+	e := strings.ToLower(eventType)
+
+	if strings.Contains(s, "paper_cut") || strings.Contains(s, "paper cut") {
+		if strings.Contains(e, "naming") {
+			return []string{"Pastel Celestial Cradle", "Marigold Garland Layer", "Golden Constellation Arch", "Gentle Starry Cloudscape"}
+		} else if strings.Contains(e, "wedding") {
+			return []string{"Royal Mandap Cutwork", "Peacock & Lotus Lattice", "Terracotta & Gold Layers", "Floral Jharokha Silhouette"}
+		} else if strings.Contains(e, "birthday") {
+			return []string{"Festive Streamer Canopy", "Confetti Balloon Layer", "Playful Party Bunting", "Starry Celebration Frame"}
+		}
+		return []string{"Layered Paper Craftwork", "Gentle Shadow Silhouette", "Ornate Paper Border", "Pastel Drop Shadow Cut"}
+	}
+
+	if strings.Contains(s, "south_indian") || strings.Contains(s, "south indian") {
+		return []string{"Temple Filigree & Lotus Mandap", "Royal Jharokha Entrance", "Golden Diya & Jasmine Toran", "Silken Kanjivaram Border"}
+	}
+
+	if strings.Contains(s, "mughal") {
+		return []string{"Floral Lattice & Peacock Arch", "Emerald & Gold Minaret", "Royal Garden Evening Glow", "Ornate Marble Inlay"}
+	}
+
+	if strings.Contains(s, "clay") {
+		return []string{"Soft Clay Pastel Canopy", "Tactile Terracotta Haven", "Matte Sculpted Flora", "Charming Clay Balloon Fest"}
+	}
+
+	return []string{"Subtle Foil Leaf Crest", "Monochrome Botanical Trace", "Elegant Linen & Gold Edge", "Geometric Gold Halo"}
+}
+
+func GenerateFallbackPromptIdeas(eventType string, style string) []PromptIdea {
+	prompts := GenerateFallbackPrompts(eventType, style)
+	titles := getThemeTitlesForStyle(style, eventType)
+
+	ideas := make([]PromptIdea, 4)
+	for i := 0; i < 4; i++ {
+		tTitle := fmt.Sprintf("Design Theme %d", i+1)
+		if i < len(titles) {
+			tTitle = titles[i]
+		}
+		pText := fmt.Sprintf("Bespoke %s invitation artwork for %s.", style, eventType)
+		if i < len(prompts) {
+			pText = prompts[i]
+		}
+		ideas[i] = PromptIdea{
+			ThemeTitle: tTitle,
+			PromptText: pText,
+			Style:      style,
+		}
+	}
+	return ideas
+}
 
 // GenerateAIPromptSuggestions uses Gemini LLM to dynamically generate 4 creative prompts tailored to event details and style.
 func GenerateAIPromptSuggestions(apiKey string, eventType string, style string) ([]string, error) {
@@ -68,8 +254,11 @@ Output format requirement: Return EXACTLY 4 numbered lines without introduction 
 3. <Prompt 3>
 4. <Prompt 4>`, eType, style, motifInstruction, style, style, eType, eType, style)
 
-	// Models to try in sequence
-	modelsToTry := []string{"gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-flash", "gemini-3.5-flash"}
+	// Models strictly loaded from environment variables (.env)
+	modelsToTry := GetStrictEnvModels()
+	if len(modelsToTry) == 0 {
+		return GenerateFallbackPrompts(eType, style), fmt.Errorf("No Gemini text models configured in environment (GEMINI_TEXT_MODEL / GEMINI_FALLBACK_TEXT_MODEL)")
+	}
 	var lastErr error
 
 	for _, modelName := range modelsToTry {
@@ -232,10 +421,9 @@ DO NOT include quotation marks, intro headers, or bullet prefixes. Return EXACTL
 3. <Subheader 3>
 4. <Subheader 4>`, eType)
 
-	textModel := os.Getenv("GEMINI_TEXT_MODEL")
-	modelsToTry := []string{"gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash"}
-	if textModel != "" {
-		modelsToTry = append([]string{textModel}, modelsToTry...)
+	modelsToTry := GetStrictEnvModels()
+	if len(modelsToTry) == 0 {
+		return GenerateFallbackWelcomeSubheaders(eType), fmt.Errorf("No Gemini text models configured in environment (GEMINI_TEXT_MODEL / GEMINI_FALLBACK_TEXT_MODEL)")
 	}
 	var lastErr error
 
@@ -359,4 +547,382 @@ func GenerateFallbackWelcomeSubheaders(eventType string) []string {
 			"Seeking your auspicious presence and blessings on our special day",
 		}
 	}
+}
+
+// GenerateAIChatResponse handles conversational agent chat responses using Gemini 3.5 Flash LLM.
+func GenerateAIChatResponse(apiKey string, plannerName string, userMsg string, eventContext string) (string, error) {
+	if apiKey == "" {
+		if strings.Contains(eventContext, "No active event details") || eventContext == "" {
+			return fmt.Sprintf("Hello %s! Welcome to Shubh Plan AI. Since we don't have an active event set up yet, we can get started by configuring your event details using the /event command.", plannerName), nil
+		}
+		return fmt.Sprintf("Hello %s! Welcome to Shubh Plan AI. I am your Master Orchestrator assistant. Active event context loaded: %s. How can I help you plan your celebration today?", plannerName, eventContext), nil
+	}
+
+	systemPrompt := fmt.Sprintf(`You are the Master Orchestrator AI Copilot for Shubh Plan AI, an expert event planning assistant.
+The active user is '%s'.
+The active event context is: '%s'.
+
+Instructions:
+- Provide concise, helpful, friendly, and professional advice on event planning, guest RSVPs, budgets, timelines, or invitation designs.
+- You are fully aware of all Shubh Plan AI slash commands and their aliases:
+  * Budget: /budget <amount> (aliases: /finance, /spend) - Set/view estimated budget.
+  * RSVPs: /rsvp (aliases: /guests, /rsvps) - View guest list. /add-rsvp (aliases: /addrsvp, /new-rsvp) - Add guest RSVP.
+  * Timeline: /timeline (aliases: /schedule, /itinerary) - View run-of-show itinerary.
+  * Profile: /event (aliases: /profile, /details) - View/edit event_details.md. /currency <code> - Set currency. /welcome <msg> - Set subheader. /planner <name> - Set planner name.
+  * Design: /generate (aliases: /design, /create), /style (aliases: /preset, /aesthetic), /aspect (aliases: /ratio, /res), /suggest (aliases: /ideas, /theme), /refine (aliases: /edit, /modify), /preview (aliases: /web).
+  * System/Memory: /honcho (aliases: /memory, /cards), /config <key> (aliases: /key, /apikey), /wizard (aliases: /wiz), /clear (aliases: /cls), /help (aliases: /h, /?).
+- When answering questions about setting budget, currency, design generation, or API keys:
+  * Explain the status clearly and advise the user on which slash command to run.
+  * If the user needs to set their Gemini API key, inform them to get a free key at https://aistudio.google.com/api-keys and run '/config <key>' or save it in .env.
+  * If asked about budget status, explain if the benchmark budget is currently set and inform the user how to update it: "To update your budget: In Terminal, type /budget <amount> (e.g., /budget 300000 or /budget 2L) to set your custom budget, or update Total Budget in event_details.md."
+- Keep responses under 5 sentences unless asked for detailed breakdowns.
+- Do NOT generate raw image generation prompts unless explicitly asked for invitation design concepts.`, plannerName, eventContext)
+
+	promptMsg := fmt.Sprintf("%s\n\nUser Message: %s", systemPrompt, userMsg)
+
+	modelsToTry := GetStrictEnvModels()
+	if len(modelsToTry) == 0 {
+		return fmt.Sprintf("Hello %s! Active event context loaded: %s. (No text models configured in GEMINI_TEXT_MODEL / GEMINI_FALLBACK_TEXT_MODEL)", plannerName, eventContext), nil
+	}
+
+	for _, modelName := range modelsToTry {
+		url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", modelName, apiKey)
+
+		payloadMap := map[string]interface{}{
+			"contents": []map[string]interface{}{
+				{
+					"parts": []map[string]interface{}{
+						{"text": promptMsg},
+					},
+				},
+			},
+			"generationConfig": map[string]interface{}{
+				"temperature":     0.7,
+				"maxOutputTokens": 1000,
+			},
+		}
+
+		bodyBytes, err := json.Marshal(payloadMap)
+		if err != nil {
+			continue
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
+		req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(bodyBytes))
+		if err != nil {
+			cancel()
+			continue
+		}
+		req.Header.Set("Content-Type", "application/json")
+
+		client := &http.Client{Timeout: 12 * time.Second}
+		resp, err := client.Do(req)
+		cancel()
+		if err != nil || resp.StatusCode != http.StatusOK {
+			if resp != nil {
+				resp.Body.Close()
+			}
+			continue
+		}
+
+		rawBytes, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			continue
+		}
+
+		var resStruct struct {
+			Candidates []struct {
+				Content struct {
+					Parts []struct {
+						Text string `json:"text"`
+					} `json:"parts"`
+				} `json:"content"`
+			} `json:"candidates"`
+		}
+
+		if err := json.Unmarshal(rawBytes, &resStruct); err == nil && len(resStruct.Candidates) > 0 {
+			for _, part := range resStruct.Candidates[0].Content.Parts {
+				if strings.TrimSpace(part.Text) != "" {
+					return strings.TrimSpace(part.Text), nil
+				}
+			}
+		}
+	}
+
+	return fmt.Sprintf("Hello %s! As your Shubh Plan AI Copilot, I can help you structure budgets, record guest RSVPs, generate ceremony timelines, and compile invitation card concepts for '%s'!", plannerName, eventContext), nil
+}
+
+// VenueSuggestion represents a single venue autocomplete prediction item
+type VenueSuggestion struct {
+	PlaceID string `json:"placeId"`
+	Text    string `json:"text"`
+}
+
+// GenerateAIVenueSuggestions uses Gemini LLM to dynamically generate 5 realistic venue recommendations tailored to query & event type
+func GenerateAIVenueSuggestions(apiKey string, textModel string, eventType string, query string) ([]VenueSuggestion, error) {
+	q := strings.TrimSpace(query)
+	if q == "" {
+		q = "Banquet Hall"
+	}
+	if eventType == "" {
+		eventType = "Wedding Celebration"
+	}
+
+	if apiKey == "" {
+		return nil, fmt.Errorf("GEMINI_API_KEY is not set")
+	}
+	if textModel == "" {
+		envModels := GetStrictEnvModels()
+		if len(envModels) > 0 {
+			textModel = envModels[0]
+		}
+	}
+
+	promptMsg := fmt.Sprintf(`You are an expert AI Venue Concierge for event planning.
+User Query: "%s"
+Event Type: "%s"
+
+Generate EXACTLY 5 real or highly realistic luxury event venue recommendations matching this query/location.
+Output format requirement: Return JSON array containing objects with "placeId" and "text" fields ONLY. No markdown formatting, no code block backticks.
+Example:
+[
+  {"placeId": "ai-venue-1", "text": "Palace Grounds, Jayamahal Road, Bengaluru, Karnataka"},
+  {"placeId": "ai-venue-2", "text": "The Leela Palace, HAL Old Airport Rd, Kodihalli, Bengaluru"}
+]`, q, eventType)
+
+	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", textModel, apiKey)
+	payloadMap := map[string]interface{}{
+		"contents": []map[string]interface{}{
+			{
+				"parts": []map[string]interface{}{
+					{"text": promptMsg},
+				},
+			},
+		},
+		"generationConfig": map[string]interface{}{
+			"temperature": 0.7,
+		},
+	}
+
+	bodyBytes, err := json.Marshal(payloadMap)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(bodyBytes))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 8 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("gemini places API returned status: %d", resp.StatusCode)
+	}
+
+	rawBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var resStruct struct {
+		Candidates []struct {
+			Content struct {
+				Parts []struct {
+					Text string `json:"text"`
+				} `json:"parts"`
+			} `json:"content"`
+		} `json:"candidates"`
+	}
+
+	if err := json.Unmarshal(rawBytes, &resStruct); err == nil && len(resStruct.Candidates) > 0 {
+		for _, part := range resStruct.Candidates[0].Content.Parts {
+			txt := strings.TrimSpace(part.Text)
+			txt = strings.TrimPrefix(txt, "```json")
+			txt = strings.TrimPrefix(txt, "```")
+			txt = strings.TrimSuffix(txt, "```")
+			txt = strings.TrimSpace(txt)
+
+			var suggestions []VenueSuggestion
+			if err := json.Unmarshal([]byte(txt), &suggestions); err == nil && len(suggestions) > 0 {
+				return suggestions, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("failed to parse AI venue suggestions")
+}
+
+// GenerateAIImage generates image bytes using Gemini/Imagen models configured strictly in .env
+func GenerateAIImage(apiKey string, prompt string, aspect string) ([]byte, error) {
+	if apiKey == "" {
+		apiKey = strings.TrimSpace(os.Getenv("GEMINI_API_KEY"))
+	}
+	if apiKey == "" {
+		return nil, fmt.Errorf("GEMINI_API_KEY is not configured in settings or .env file")
+	}
+
+	modelsToTry := GetStrictEnvImageModels()
+	if len(modelsToTry) == 0 {
+		return nil, fmt.Errorf("No Gemini image models configured in environment (GEMINI_IMAGE_MODEL / GEMINI_FALLBACK_IMAGE_MODEL)")
+	}
+
+	ar := "9:16"
+	if aspect != "" {
+		ar = aspect
+	}
+
+	var lastErr error
+	for _, modelName := range modelsToTry {
+		imgBytes, err := executeSingleImageRequest(apiKey, modelName, prompt, ar)
+		if err == nil {
+			return imgBytes, nil
+		}
+		lastErr = err
+	}
+
+	return nil, fmt.Errorf("all image model attempts failed. Last error: %v", lastErr)
+}
+
+func executeSingleImageRequest(apiKey string, modelName string, prompt string, ar string) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+	defer cancel()
+
+	if strings.HasPrefix(modelName, "imagen-") {
+		url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:predict?key=%s", modelName, apiKey)
+		reqBody := map[string]interface{}{
+			"instances": []map[string]interface{}{
+				{"prompt": prompt},
+			},
+			"parameters": map[string]interface{}{
+				"sampleCount":      1,
+				"aspectRatio":      ar,
+				"outputMimeType":   "image/png",
+				"personGeneration": "ALLOW_ADULT",
+			},
+		}
+
+		jsonBytes, err := json.Marshal(reqBody)
+		if err != nil {
+			return nil, err
+		}
+		req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonBytes))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			bodyStr := string(body)
+			if len(bodyStr) > 250 {
+				bodyStr = bodyStr[:250] + "..."
+			}
+			return nil, fmt.Errorf("%s status %d: %s", modelName, resp.StatusCode, bodyStr)
+		}
+
+		var resStruct struct {
+			Predictions []struct {
+				BytesBase64Encoded string `json:"bytesBase64Encoded"`
+			} `json:"predictions"`
+		}
+		if err := json.Unmarshal(body, &resStruct); err != nil {
+			return nil, fmt.Errorf("%s JSON decode error: %w", modelName, err)
+		}
+		if len(resStruct.Predictions) == 0 || resStruct.Predictions[0].BytesBase64Encoded == "" {
+			return nil, fmt.Errorf("%s returned empty prediction", modelName)
+		}
+		return base64.StdEncoding.DecodeString(resStruct.Predictions[0].BytesBase64Encoded)
+	}
+
+	// Multimodal Gemini Image API Format (gemini-3.1-flash-image / gemini-2.5-flash-image)
+	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", modelName, apiKey)
+	reqBody := map[string]interface{}{
+		"contents": []map[string]interface{}{
+			{
+				"parts": []map[string]interface{}{
+					{"text": fmt.Sprintf("Generate a high-resolution invitation card graphic artwork PNG (aspect ratio %s) for: %s", ar, prompt)},
+				},
+			},
+		},
+		"generation_config": map[string]interface{}{
+			"response_modalities": []string{"IMAGE"},
+		},
+	}
+
+	jsonBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonBytes))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		bodyStr := string(body)
+		if len(bodyStr) > 250 {
+			bodyStr = bodyStr[:250] + "..."
+		}
+		return nil, fmt.Errorf("%s status %d: %s", modelName, resp.StatusCode, bodyStr)
+	}
+
+	var resStruct struct {
+		Candidates []struct {
+			Content struct {
+				Parts []struct {
+					InlineData struct {
+						MimeType string `json:"mimeType"`
+						Data     string `json:"data"`
+					} `json:"inlineData"`
+				} `json:"parts"`
+			} `json:"content"`
+		} `json:"candidates"`
+	}
+
+	if err := json.Unmarshal(body, &resStruct); err != nil {
+		return nil, fmt.Errorf("%s JSON decode error: %w", modelName, err)
+	}
+
+	if len(resStruct.Candidates) > 0 {
+		for _, part := range resStruct.Candidates[0].Content.Parts {
+			if part.InlineData.Data != "" {
+				return base64.StdEncoding.DecodeString(part.InlineData.Data)
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("%s returned no valid image binary in response", modelName)
 }

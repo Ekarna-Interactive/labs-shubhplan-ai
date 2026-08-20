@@ -57,6 +57,7 @@ type LogEntry struct {
 
 // Model represents the Bubble Tea application state
 type Model struct {
+	SessionID          string
 	TextInput          textinput.Model
 	SetupInput         textinput.Model
 	Viewport           viewport.Model
@@ -92,7 +93,6 @@ type Model struct {
 	LastImage          string
 	LastTitle          string
 	LastAspect         string
-	SessionID          string
 	RSVPStep           RSVPWizardStep
 	RSVPData           RSVPWizardData
 	ShowVerbose        bool
@@ -149,7 +149,10 @@ func InitialModel(cfg config.Config, builder *generator.BasicBuilder) Model {
 	vp.KeyMap.Down = key.NewBinding(key.WithKeys("down"))
 
 	geminiKey := cfg.GeminiAPIKey
-	honchoKey := strings.TrimSpace(os.Getenv("HONCHO_API_KEY"))
+	honchoKey := cfg.HonchoAPIKey
+	if honchoKey == "" {
+		honchoKey = strings.TrimSpace(os.Getenv("HONCHO_API_KEY"))
+	}
 
 	isSetup := geminiKey == ""
 	initialStep := StepEventType
@@ -163,8 +166,8 @@ func InitialModel(cfg config.Config, builder *generator.BasicBuilder) Model {
 	}
 
 	initialLogs := []LogEntry{
-		{Sender: "SYSTEM", Text: "✨ Welcome to Shubh Plan AI — Open Source Engine Terminal!"},
-		{Sender: "MasterOrchestrator", Text: fmt.Sprintf("🤖 Google ADK Subagents ready: TimelineAgent, VendorAgent, BudgetAgent, GuestConcierge.\nMemory: %s", honchoStatusText)},
+		{Sender: "SYSTEM", Text: "✨ Welcome to Shubh Plan AI — Event Planning Concierge!"},
+		{Sender: "AI Concierge", Text: fmt.Sprintf("🤖 AI Assistants ready: Timeline Assistant, Vendor Assistant, Budget Assistant, Guest Assistant.\nMemory: %s", honchoStatusText)},
 	}
 
 	profile, hasProfile := config.LoadEventProfile()
@@ -189,6 +192,7 @@ func InitialModel(cfg config.Config, builder *generator.BasicBuilder) Model {
 		})
 		if hasProfile {
 			initialStep = StepComplete
+			client.GetHonchoManager().EnsureWorkspaceCreated(profile.GetEventID(), fmt.Sprintf("%s for %s", profile.EventType, profile.HostNames))
 			ti.Placeholder = "Type an event prompt (e.g. 'Build Mehendi timeline', 'Check floral budget')..."
 			initialLogs = append(initialLogs, LogEntry{
 				Sender: "PROFILE",

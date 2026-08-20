@@ -73,6 +73,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				case 1:
 					if keyVal != "" {
 						_ = config.SaveHonchoAPIKey(keyVal)
+						client.GetHonchoManager().SetAPIKey(keyVal)
 						m.Logs = append(m.Logs, LogEntry{
 							Sender: "SYSTEM",
 							Text:   "✨ Saved HONCHO_API_KEY to local .env file! Honcho Cloud Memory sync active.",
@@ -324,7 +325,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			web.OpenBrowser(url)
 			m.Logs = append(m.Logs, LogEntry{
 				Sender: "SYSTEM",
-				Text:   fmt.Sprintf("✨ Real-time preview server running at %s", url),
+				Text:   fmt.Sprintf("✨ Real-time preview server running at %s?sessionID=%s", url, m.SessionID),
 			})
 		}
 		m.StatusMsg = "Ready"

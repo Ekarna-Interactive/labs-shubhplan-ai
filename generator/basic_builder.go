@@ -5,6 +5,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type PromptConcept struct {
@@ -160,7 +161,7 @@ func (b *BasicBuilder) CompileStructured(data EventData) ResponsePayload {
 	displayTitle := names
 
 	// Format Date & Venue
-	dateStr := strings.TrimSpace(data.EventDate)
+	dateStr := FormatHumanReadableOrdinalDate(data.EventDate)
 	venueStr := strings.TrimSpace(data.Venue)
 	welcomeMsg := strings.TrimSpace(data.WelcomeMessage)
 
@@ -191,13 +192,13 @@ func (b *BasicBuilder) CompileStructured(data EventData) ResponsePayload {
 	// Build 3-line mandatory typography mandate matching agents-adk
 	var mandatoryTextSpec string
 	if welcomeMsg != "" && dateVenueStr != "" {
-		mandatoryTextSpec = fmt.Sprintf("MANDATORY TYPOGRAPHY TO RENDER IN CENTRAL PLATE (3-LINE HIERARCHY): Line 1 (Main Title): '%s'. Line 2 (Secondary Welcome Subheader): '%s'. Line 3 (Date & Location): '%s'.", names, welcomeMsg, dateVenueStr)
+		mandatoryTextSpec = fmt.Sprintf("MANDATORY TYPOGRAPHY PRINTED DIRECTLY INSIDE THE CENTRAL BANNER / LABEL PLAQUE (3-LINE HIERARCHY): Line 1 (Main Title): '%s'. Line 2 (Secondary Welcome Subheader): '%s'. Line 3 (Date & Location): '%s'.", names, welcomeMsg, dateVenueStr)
 	} else if welcomeMsg != "" {
-		mandatoryTextSpec = fmt.Sprintf("MANDATORY TYPOGRAPHY TO RENDER IN CENTRAL PLATE (2-LINE HIERARCHY): Line 1 (Main Title): '%s'. Line 2 (Secondary Welcome Subheader): '%s'.", names, welcomeMsg)
+		mandatoryTextSpec = fmt.Sprintf("MANDATORY TYPOGRAPHY PRINTED DIRECTLY INSIDE THE CENTRAL BANNER / LABEL PLAQUE (2-LINE HIERARCHY): Line 1 (Main Title): '%s'. Line 2 (Secondary Welcome Subheader): '%s'.", names, welcomeMsg)
 	} else if dateVenueStr != "" {
-		mandatoryTextSpec = fmt.Sprintf("MANDATORY TYPOGRAPHY TO RENDER IN CENTRAL PLATE (2-LINE HIERARCHY): Line 1 (Main Title): '%s'. Line 2 (Date & Location): '%s'.", names, dateVenueStr)
+		mandatoryTextSpec = fmt.Sprintf("MANDATORY TYPOGRAPHY PRINTED DIRECTLY INSIDE THE CENTRAL BANNER / LABEL PLAQUE (2-LINE HIERARCHY): Line 1 (Main Title): '%s'. Line 2 (Date & Location): '%s'.", names, dateVenueStr)
 	} else {
-		mandatoryTextSpec = fmt.Sprintf("MANDATORY TYPOGRAPHY TO RENDER IN CENTRAL PLATE: '%s'.", names)
+		mandatoryTextSpec = fmt.Sprintf("MANDATORY TYPOGRAPHY PRINTED DIRECTLY INSIDE THE CENTRAL BANNER / LABEL PLAQUE: '%s'.", names)
 	}
 
 	sanitizedVisualPrompt := sanitizeVisualPromptBody(data.VisualPrompt)
@@ -258,7 +259,14 @@ func sanitizeVisualPromptBody(prompt string) string {
 	reQuotes := regexp.MustCompile(`(?i)(?:with\s+the\s+text|with\s+text|text)\s*["'“][^"'”]+["'”]`)
 	cleaned = reQuotes.ReplaceAllString(cleaned, "")
 
-	// 5. Clean up extra punctuation/spaces
+	// 5. Strip anti-typography phrases ("blank", "empty", "designed for text") that cause models to omit text from banners
+	reAntiTypo := regexp.MustCompile(`(?i)\b(blank|empty|unwritten)\s+`)
+	cleaned = reAntiTypo.ReplaceAllString(cleaned, "")
+
+	reBlankBanner := regexp.MustCompile(`(?i)\bdesigned\s+for\s+(invitation\s+)?text\b`)
+	cleaned = reBlankBanner.ReplaceAllString(cleaned, "containing the central typography")
+
+	// 6. Clean up extra punctuation/spaces
 	cleaned = strings.TrimSpace(cleaned)
 	cleaned = strings.TrimPrefix(cleaned, ",")
 	cleaned = strings.TrimPrefix(cleaned, ".")
@@ -352,4 +360,58 @@ func stripMetaPhrases(text string) string {
 		cleaned = re.ReplaceAllString(cleaned, "")
 	}
 	return strings.TrimSpace(cleaned)
+}
+
+// FormatHumanReadableOrdinalDate parses ISO or raw date strings and converts them to human readable format with ordinal suffixes (e.g. September 20th, 2026 or Jan 14th, 2026)
+func FormatHumanReadableOrdinalDate(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return ""
+	}
+
+	formats := []string{
+		"2006-01-02",
+		"2006/01/02",
+		"02-01-2006",
+		"02/01/2006",
+		"01/02/2006",
+		"Jan 02, 2006",
+		"January 02, 2006",
+		"02 Jan 2006",
+		"02 January 2006",
+		"Jan 2, 2006",
+		"January 2, 2006",
+		"2 Jan 2006",
+		"2 January 2006",
+		"2006-01-02T15:04:05Z07:00",
+	}
+
+	var t time.Time
+	var parsed bool
+	for _, fmtStr := range formats {
+		if pt, err := time.Parse(fmtStr, raw); err == nil {
+			t = pt
+			parsed = true
+			break
+		}
+	}
+
+	if !parsed {
+		return raw
+	}
+
+	day := t.Day()
+	suffix := "th"
+	if day%100 < 11 || day%100 > 13 {
+		switch day % 10 {
+		case 1:
+			suffix = "st"
+		case 2:
+			suffix = "nd"
+		case 3:
+			suffix = "rd"
+		}
+	}
+
+	return fmt.Sprintf("%s %d%s, %d", t.Format("January"), day, suffix, t.Year())
 }

@@ -224,14 +224,14 @@ func (m Model) handleRSVPWizardInput(input string) (Model, tea.Cmd) {
 
 		m.updateViewportContent()
 
-		// Submit structured prompt to Go ADK & Honcho memory
+		// Submit structured prompt to AI Engine & Smart Memory
 		promptText := fmt.Sprintf(
 			"Record RSVP for guest %s (Phone: %s): Status is %s, Headcount is %d, Dietary is %s, Cab requested is %v.",
 			m.RSVPData.Name, m.RSVPData.Phone, m.RSVPData.Status, m.RSVPData.Headcount, dietDisplay, m.RSVPData.Cab,
 		)
 
 		m.Loading = true
-		m.StatusMsg = "Saving RSVP record to database & Honcho memory..."
+		m.StatusMsg = "Saving RSVP record to database & Smart Memory..."
 		return m, tea.Batch(
 			m.Spinner.Tick,
 			m.runAgentCmd(promptText),
