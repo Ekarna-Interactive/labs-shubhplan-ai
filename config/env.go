@@ -175,19 +175,7 @@ func SaveHonchoAPIKey(key string) error {
 	return os.WriteFile(envPath, []byte(strings.Join(lines, "\n")+"\n"), 0644)
 }
 
-// GetPlacesAPIKey returns the Google Places API Key if configured
-func GetPlacesAPIKey() string {
-	key := getEnvClean("GOOGLE_PLACES_API_KEY")
-	if key == "" {
-		key = getEnvClean("GOOGLE_MAPS_API_KEY")
-	}
-	if key == "" {
-		key = getEnvClean("PLACES_API_KEY")
-	}
-	return key
-}
-
-// SavePlacesAPIKey persists the Places API key to local .env file and environment
+// SavePlacesAPIKey persists the Google Places API key to local .env file and environment
 func SavePlacesAPIKey(key string) error {
 	cleanKey := strings.TrimSpace(key)
 	cleanKey = strings.Trim(cleanKey, `"'`)
@@ -218,4 +206,16 @@ func SavePlacesAPIKey(key string) error {
 	}
 
 	return os.WriteFile(envPath, []byte(strings.Join(lines, "\n")+"\n"), 0644)
+}
+
+// GetPlacesAPIKey returns the Google Places API Key if configured
+func GetPlacesAPIKey() string {
+	key := getEnvClean("GOOGLE_PLACES_API_KEY")
+	if key == "" {
+		key = getEnvClean("GOOGLE_MAPS_API_KEY")
+	}
+	if key == "" {
+		key = getEnvClean("PLACES_API_KEY")
+	}
+	return key
 }

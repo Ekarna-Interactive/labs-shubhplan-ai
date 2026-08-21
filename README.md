@@ -191,13 +191,14 @@ All workspace state is persisted inside `./data/` (or Fly.io persistent volume m
 | Variable | Default | Description |
 | :--- | :--- | :--- |
 | `GEMINI_API_KEY` | *(Optional)* | Server-wide Google Gemini API Key. Web/SSH users can override with client keys. |
-| `GEMINI_TEXT_MODEL` | `gemini-3.5-flash` | Primary text model for prompt compilation & copilot chat. |
-| `GEMINI_IMAGE_MODEL` | `gemini-3.1-flash-image` | Model for invitation card artwork generation. |
-| `GOOGLE_PLACES_API_KEY` | *(Optional)* | Key for live Google Places venue search. Uses AI fallback if empty. |
+| `GEMINI_TEXT_MODEL` | `gemini-2.5-flash` | Primary text model for prompt compilation & copilot chat. |
+| `GEMINI_IMAGE_MODEL` | `imagen-3.0-generate-002` | Model for invitation card artwork generation. |
+| `GOOGLE_PLACES_API_KEY` | *(Optional)* | Key for live Google Places venue search. Uses Gemini AI Venue Agent if empty. |
 | `HONCHO_API_KEY` | *(Optional)* | Key for `api.honcho.dev/v3`. Defaults to zero-config local JSON store if empty. |
 | `SSH_HOST_KEY` | *(Optional Secret)* | PEM-encoded Ed25519 private key for Wish SSH server host fingerprint persistence across redeployments. |
-| `HONCHO_APP_ID` | `shubh-plan-ai` | Honcho Application ID namespace. |
-| `SERVER_MODE` / `MULTI_USER` | `false` | Enable to prevent client browser keys from writing to global server `.env`. |
+| `PUBLIC_URL` | *(Optional)* | Custom domain URL (e.g. `https://events.acme.com`) for self-hosted SSH TUI preview links. |
+| `DEMO_MODE` | `false` | Set `true` to auto-seed showcase demo user `admin@shubhplan.ai` / `shubh2026`. |
+| `SERVER_MODE` / `MULTI_USER` | `false` | Enable to isolate client browser keys from writing to global server `.env`. |
 | `PORT` | `3000` | HTTP Web UI server listening port. |
 | `SSH_PORT` | `2222` | Wish SSH Terminal server listening port. |
 | `SHUBH_DATA_DIR` | `./data` | Local directory for user accounts, RSVPs, itinerary JSON, and memory store. |

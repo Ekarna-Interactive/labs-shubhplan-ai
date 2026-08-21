@@ -27,6 +27,7 @@ const (
 	CmdHoncho   CommandType = "HONCHO"
 	CmdExport   CommandType = "EXPORT"
 	CmdPlanner  CommandType = "PLANNER"
+	CmdVendor   CommandType = "VENDOR"
 	CmdVerbose  CommandType = "VERBOSE"
 	CmdClear    CommandType = "CLEAR"
 	CmdHelp     CommandType = "HELP"
@@ -179,6 +180,14 @@ func Parse(input string) ParsedInput {
 	case "/planner", "/profile-name":
 		return ParsedInput{
 			Type:         CmdPlanner,
+			RawInput:     input,
+			EventDetails: argsString,
+			Args:         parts[1:],
+		}
+
+	case "/vendor", "/vendors", "/venue", "/location":
+		return ParsedInput{
+			Type:         CmdVendor,
 			RawInput:     input,
 			EventDetails: argsString,
 			Args:         parts[1:],

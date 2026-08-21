@@ -32,6 +32,7 @@ const (
 	StepAwaitingWelcomeChoice
 	StepAspectSelection
 	StepStyleSelection
+	StepVenueSelection
 	StepPromptChoice
 	StepAwaitingSuggestionChoice
 	StepComplete
@@ -78,6 +79,8 @@ type Model struct {
 	EventDetails       string
 	SelectedAspect     string
 	SelectedStyle      string
+	VenueSuggestions   []generator.VenueSuggestion
+	VenueSearchQuery   string
 	OptionIndex        int
 	Suggestions        []string
 	Spinner            spinner.Model

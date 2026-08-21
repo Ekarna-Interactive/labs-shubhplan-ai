@@ -340,21 +340,8 @@ func (m Model) handleParsedCommand(parsed command.ParsedInput) (Model, tea.Cmd) 
 			return m, nil
 
 		case command.CmdEvent:
-			details := strings.TrimSpace(parsed.EventDetails)
-			if details != "" {
-				m.EventDetails = details
-				_ = config.SaveStructuredEventProfile("Event", details, "", "", m.Currency, m.WelcomeMessage, m.SelectedAspect, m.PlannerName, m.PlannerRole)
-				m.Logs = append(m.Logs, LogEntry{
-					Sender: "SYSTEM",
-					Text:   fmt.Sprintf("✨ Updated Event Profile and persisted to event_details.md:\n\"%s\"", details),
-				})
-			} else {
-				if profile, ok := config.LoadEventProfile(); ok && (profile.Venue != "" || profile.EventType != "") {
-					m.Logs = append(m.Logs, LogEntry{
-						Sender: "VENUE",
-						Text:   renderVenueDetailsTUI(profile),
-					})
-				}
+			subCmd := strings.ToLower(strings.TrimSpace(parsed.EventDetails))
+			if subCmd == "new" || subCmd == "create" || subCmd == "setup" || subCmd == "wizard" {
 				m.Step = StepEventType
 				m.OptionIndex = 0
 				m.TextInput.Placeholder = "Use ↑/↓ arrow keys to select, press Enter to confirm, or type event type"
@@ -362,7 +349,36 @@ func (m Model) handleParsedCommand(parsed command.ParsedInput) (Model, tea.Cmd) 
 					Sender: "STEP 1/5",
 					Text:   renderEventTypeMenu(m.OptionIndex),
 				})
+				return m, nil
 			}
+
+			if subCmd == "update" || subCmd == "edit" {
+				m.Step = StepEventType
+				m.OptionIndex = 0
+				m.TextInput.Placeholder = "Use ↑/↓ arrow keys to select, press Enter to confirm, or type event type"
+				m.Logs = append(m.Logs, LogEntry{
+					Sender: "EDIT PROFILE",
+					Text:   renderEventTypeMenu(m.OptionIndex),
+				})
+				return m, nil
+			}
+
+			if subCmd != "" && subCmd != "show" && subCmd != "info" {
+				m.EventDetails = parsed.EventDetails
+				_ = config.SaveStructuredEventProfile("Event", parsed.EventDetails, "", "", m.Currency, m.WelcomeMessage, m.SelectedAspect, m.PlannerName, m.PlannerRole)
+				m.Logs = append(m.Logs, LogEntry{
+					Sender: "SYSTEM",
+					Text:   fmt.Sprintf("✨ Updated Event Profile and persisted to event_details.md:\n\"%s\"", parsed.EventDetails),
+				})
+				return m, nil
+			}
+
+			// /event without subcommands -> display current active event details
+			profile, _ := config.LoadEventProfile()
+			m.Logs = append(m.Logs, LogEntry{
+				Sender: "PROFILE",
+				Text:   renderEventProfileTUI(profile),
+			})
 			return m, nil
 
 		case command.CmdAspect:
@@ -537,10 +553,60 @@ func (m Model) handleParsedCommand(parsed command.ParsedInput) (Model, tea.Cmd) 
 			})
 			return m, nil
 
+		case command.CmdVendor:
+			promptQuery := strings.TrimSpace(parsed.EventDetails)
+			profile, _ := config.LoadEventProfile()
+
+			if promptQuery != "" {
+				placesKey := config.GetPlacesAPIKey()
+				geminiKey := m.Config.GeminiAPIKey
+				if geminiKey == "" {
+					geminiKey = config.LoadConfig().GeminiAPIKey
+				}
+
+				suggestions := generator.FetchVenueSuggestions(promptQuery, placesKey, geminiKey, m.EventType)
+				m.VenueSuggestions = suggestions
+				m.VenueSearchQuery = promptQuery
+				m.OptionIndex = 0
+				m.Step = StepVenueSelection
+
+				logText := renderVenueMenu(suggestions, 0, promptQuery)
+				m.Logs = append(m.Logs, LogEntry{
+					Sender: "VendorAgent",
+					Text:   logText,
+				})
+				return m, nil
+			}
+
+			// Display current active venue details
+			venueName := profile.Venue
+			if venueName == "" {
+				venueName = "Main Event Venue"
+			}
+			addr := profile.VenueAddress
+			if addr == "" && profile.VenueDetails.VenueFormattedAddress != "" {
+				addr = profile.VenueDetails.VenueFormattedAddress
+			}
+			if addr == "" {
+				addr = "Address pending configuration"
+			}
+			mapsURL := profile.VenueDetails.GoogleMapURL
+			if mapsURL == "" {
+				mapsURL = "https://maps.google.com/?q=" + url.QueryEscape(venueName)
+			}
+
+			logText := fmt.Sprintf("📍 Active Venue Profile:\n  • Venue: %s\n  • Address: %s\n  • Google Maps: %s\n\n💡 Tip: Type '/vendor <query>' or '/venue <name>' (e.g. /venue MCC Hall Chennai) to search live Google Places & update venue!", venueName, addr, mapsURL)
+			m.Logs = append(m.Logs, LogEntry{
+				Sender: "VendorAgent",
+				Text:   logText,
+			})
+			return m, nil
+
 		case command.CmdHelp:
 			helpText := `📌 Main Slash Commands:
   • /generate [details] - Compile context & generate invitation design
   • /event [details]    - View/update profile details in event_details.md
+  • /vendor [query]     - Search venues, pricing & vendor recommendations
   • /budget [amount]   - View or set estimated budget (e.g. /budget 300000)
   • /rsvp              - Open Tab 4 (Guest Roster & Dietary Facts)
   • /add-rsvp          - Add/update guest RSVP & transport details
@@ -567,6 +633,7 @@ func (m Model) handleParsedCommand(parsed command.ParsedInput) (Model, tea.Cmd) 
   • /ideas, /theme, /sug        --> /suggest
   • /preset, /aesthetic, /sty   --> /style
   • /profile, /details          --> /event
+  • /venue, /location           --> /vendor
   • /ratio, /res, /resolution   --> /aspect
   • /curr, /currency-code       --> /currency
   • /subheader, /msg            --> /welcome
@@ -650,6 +717,26 @@ func (m Model) handleParsedCommand(parsed command.ParsedInput) (Model, tea.Cmd) 
 			logTxt = "(skipped)"
 		}
 		m.Logs = append(m.Logs, LogEntry{Sender: "USER", Text: logTxt})
+		if rawText != "" && rawText != "(skipped)" {
+			placesKey := config.GetPlacesAPIKey()
+			geminiKey := m.Config.GeminiAPIKey
+			if geminiKey == "" {
+				geminiKey = config.LoadConfig().GeminiAPIKey
+			}
+
+			suggestions := generator.FetchVenueSuggestions(rawText, placesKey, geminiKey, m.EventType)
+			m.VenueSuggestions = suggestions
+			m.VenueSearchQuery = rawText
+			m.OptionIndex = 0
+			m.Step = StepVenueSelection
+
+			m.Logs = append(m.Logs, LogEntry{
+				Sender: "STEP 4/5 - VENUE AUTOCOMPLETE",
+				Text:   renderVenueMenu(suggestions, 0, rawText),
+			})
+			return m, nil
+		}
+
 		m.Venue = rawText
 		m.Step = StepCurrency
 		m.OptionIndex = 0
@@ -657,6 +744,34 @@ func (m Model) handleParsedCommand(parsed command.ParsedInput) (Model, tea.Cmd) 
 		m.Logs = append(m.Logs, LogEntry{
 			Sender: "STEP 5/5",
 			Text:   fmt.Sprintf("Venue & Location: \"%s\"\n\n%s", m.Venue, renderCurrencyMenu(m.OptionIndex)),
+		})
+		return m, nil
+
+	case StepVenueSelection:
+		selected := resolveVenueChoice(rawText, m.VenueSuggestions, m.OptionIndex, m.VenueSearchQuery)
+		m.Logs = append(m.Logs, LogEntry{Sender: "USER", Text: selected.Text})
+
+		placesKey := config.GetPlacesAPIKey()
+		venueDetails := generator.FetchPlaceDetails(selected.PlaceID, placesKey)
+		if venueDetails.PrimaryVenue == "" || venueDetails.PrimaryVenue == selected.PlaceID {
+			venueDetails.PrimaryVenue = selected.Text
+		}
+
+		m.Venue = venueDetails.PrimaryVenue
+
+		_ = config.SaveStructuredEventProfile(m.EventType, m.HostNames, m.EventDate, m.Venue, m.Currency, m.WelcomeMessage, m.SelectedAspect, m.PlannerName, m.PlannerRole)
+		_ = config.SaveVenueDetails(venueDetails)
+
+		m.Step = StepCurrency
+		m.OptionIndex = 0
+		m.TextInput.Placeholder = "Use ↑/↓ arrow keys or type currency code (e.g. USD, EUR, GBP, INR, AUD, SGD)"
+
+		logTxt := fmt.Sprintf("✨ Selected & Saved Venue Details to event_details.md:\n  • Primary Venue: %s\n  • Full Address: %s\n  • Google Maps: %s\n  • Directions: %s\n  • Place ID: %s\n\n%s",
+			venueDetails.PrimaryVenue, venueDetails.VenueFormattedAddress, venueDetails.GoogleMapURL, venueDetails.GoogleMapDirectionsURL, venueDetails.PlaceID, renderCurrencyMenu(m.OptionIndex))
+
+		m.Logs = append(m.Logs, LogEntry{
+			Sender: "VendorAgent",
+			Text:   logTxt,
 		})
 		return m, nil
 
@@ -988,7 +1103,19 @@ func (m Model) handleParsedCommand(parsed command.ParsedInput) (Model, tea.Cmd) 
 	}
 }
 
-func renderVenueDetailsTUI(p config.EventProfile) string {
+func renderEventProfileTUI(p config.EventProfile) string {
+	eType := p.EventType
+	if eType == "" {
+		eType = "Not Configured"
+	}
+	hosts := p.HostNames
+	if hosts == "" {
+		hosts = "Not Configured"
+	}
+	eDate := p.EventDate
+	if eDate == "" {
+		eDate = "Not Configured"
+	}
 	vd := p.VenueDetails
 	venueName := p.Venue
 	if venueName == "" {
@@ -1021,5 +1148,38 @@ func renderVenueDetailsTUI(p config.EventProfile) string {
 		dirURL = "https://www.google.com/maps/dir/?api=1&destination=" + url.QueryEscape(venueName+" "+addr)
 	}
 
-	return fmt.Sprintf("📍 EVENT VENUE & LOCATION INTELLIGENCE (data/event-details.json)\n──────────────────────────────────────────────────────────────────\n🏛️  Venue Name:   %s\n📍  Full Address: %s\n🗺️  Google Maps:  %s\n🚗  Directions:  %s\n🔑  Place ID:    %s", venueName, addr, mapURL, dirURL, placeID)
+	sym := GetCurrencySymbol(p.DefaultCurrency)
+	budgetStr := fmt.Sprintf("%s%.2f", sym, p.TotalBudget)
+	if p.TotalBudget <= 0 {
+		budgetStr = "Not Configured"
+	}
+
+	var sb strings.Builder
+	sb.WriteString("📋 ACTIVE EVENT PROFILE & DETAILS (event_details.md / data/event-details.json)\n")
+	sb.WriteString("──────────────────────────────────────────────────────────────────\n")
+	sb.WriteString(fmt.Sprintf("🎉  Event Type:   %s\n", eType))
+	sb.WriteString(fmt.Sprintf("👥  Hosts/Couple: %s\n", hosts))
+	sb.WriteString(fmt.Sprintf("📅  Event Date:   %s\n", eDate))
+	sb.WriteString(fmt.Sprintf("🏛️  Venue Name:   %s\n", venueName))
+	sb.WriteString(fmt.Sprintf("📍  Full Address: %s\n", addr))
+	sb.WriteString(fmt.Sprintf("🗺️  Google Maps:  %s\n", mapURL))
+	sb.WriteString(fmt.Sprintf("🚗  Directions:   %s\n", dirURL))
+	sb.WriteString(fmt.Sprintf("🔑  Place ID:     %s\n", placeID))
+	sb.WriteString(fmt.Sprintf("💰  Total Budget: %s\n", budgetStr))
+	sb.WriteString(fmt.Sprintf("💱  Currency:     %s (%s)\n", p.DefaultCurrency, sym))
+	sb.WriteString(fmt.Sprintf("👤  Planner:      %s (%s)\n", p.PlannerName, p.PlannerRole))
+
+	if p.WelcomeMessage != "" {
+		sb.WriteString(fmt.Sprintf("💌  Welcome Msg:  \"%s\"\n", p.WelcomeMessage))
+	}
+
+	sb.WriteString("──────────────────────────────────────────────────────────────────\n")
+	sb.WriteString("💡 Event Management Commands:\n")
+	sb.WriteString("  • /event new (or /wizard)   - Launch interactive step-by-step setup wizard\n")
+	sb.WriteString("  • /event update (or /edit)  - Modify existing event profile details\n")
+	sb.WriteString("  • /venue <query>            - Search Google Places & update venue\n")
+	sb.WriteString("  • /budget <amount>          - Update total estimated budget\n")
+	sb.WriteString("  • /currency <code>          - Update default currency")
+
+	return sb.String()
 }

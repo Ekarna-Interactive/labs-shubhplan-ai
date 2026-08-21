@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -761,6 +762,211 @@ Example:
 	}
 
 	return nil, fmt.Errorf("failed to parse AI venue suggestions")
+}
+
+// ResolveVenueQuery queries Google Places API (or Gemini AI Venue Agent / Fallback) to resolve venue details
+func ResolveVenueQuery(query string, placesKey string, geminiKey string) (primary string, address string, mapsURL string, directionsURL string) {
+	q := strings.TrimSpace(query)
+	if q == "" {
+		return "Main Event Venue", "Venue Address pending configuration", "", ""
+	}
+
+	// 1. Google Places API (New) Search
+	if placesKey != "" {
+		reqURL := "https://places.googleapis.com/v1/places:searchText"
+		payload := map[string]interface{}{"textQuery": q}
+		pBytes, _ := json.Marshal(payload)
+
+		req, err := http.NewRequestWithContext(context.Background(), "POST", reqURL, bytes.NewBuffer(pBytes))
+		if err == nil {
+			req.Header.Set("X-Goog-Api-Key", placesKey)
+			req.Header.Set("X-Goog-FieldMask", "places.displayName,places.formattedAddress,places.googleMapsUri,places.id")
+			req.Header.Set("Content-Type", "application/json")
+
+			hc := &http.Client{Timeout: 5 * time.Second}
+			if resp, err := hc.Do(req); err == nil && resp.StatusCode == http.StatusOK {
+				defer resp.Body.Close()
+				var searchRes struct {
+					Places []struct {
+						DisplayName struct {
+							Text string `json:"text"`
+						} `json:"displayName"`
+						FormattedAddress string `json:"formattedAddress"`
+						GoogleMapsURI    string `json:"googleMapsUri"`
+						ID               string `json:"id"`
+					} `json:"places"`
+				}
+				if err := json.NewDecoder(resp.Body).Decode(&searchRes); err == nil && len(searchRes.Places) > 0 {
+					p := searchRes.Places[0]
+					primary = p.DisplayName.Text
+					if primary == "" {
+						primary = q
+					}
+					address = p.FormattedAddress
+					mapsURL = p.GoogleMapsURI
+					if mapsURL == "" {
+						mapsURL = fmt.Sprintf("https://maps.google.com/?q=%s", url.QueryEscape(primary+", "+address))
+					}
+					directionsURL = fmt.Sprintf("https://www.google.com/maps/dir/?api=1&destination=%s", url.QueryEscape(primary+", "+address))
+					return primary, address, mapsURL, directionsURL
+				}
+			}
+		}
+	}
+
+	// 2. Gemini AI Venue Agent Fallback
+	if geminiKey != "" {
+		sug, err := GenerateAIVenueSuggestions(geminiKey, config.LoadConfig().GeminiTextModel, "Event", q)
+		if err == nil && len(sug) > 0 {
+			primary = q
+			address = sug[0].Text
+			mapsURL = fmt.Sprintf("https://maps.google.com/?q=%s", url.QueryEscape(q+", "+address))
+			directionsURL = fmt.Sprintf("https://www.google.com/maps/dir/?api=1&destination=%s", url.QueryEscape(q+", "+address))
+			return primary, address, mapsURL, directionsURL
+		}
+	}
+
+	// 3. Fallback Format
+	primary = q
+	address = q
+	mapsURL = fmt.Sprintf("https://maps.google.com/?q=%s", url.QueryEscape(q))
+	directionsURL = fmt.Sprintf("https://www.google.com/maps/dir/?api=1&destination=%s", url.QueryEscape(q))
+	return primary, address, mapsURL, directionsURL
+}
+
+// FetchVenueSuggestions returns 4-5 venue predictions using Google Places API, Gemini AI, or Curated directory
+func FetchVenueSuggestions(query string, placesKey string, geminiKey string, eventType string) []VenueSuggestion {
+	q := strings.TrimSpace(query)
+	if q == "" {
+		q = "Banquet Hall"
+	}
+
+	// 1. Google Places API (New) Autocomplete / SearchText
+	if placesKey != "" {
+		reqURL := "https://places.googleapis.com/v1/places:autocomplete"
+		payload := map[string]interface{}{"input": q}
+		pBytes, _ := json.Marshal(payload)
+
+		req, err := http.NewRequestWithContext(context.Background(), "POST", reqURL, bytes.NewBuffer(pBytes))
+		if err == nil {
+			req.Header.Set("X-Goog-Api-Key", placesKey)
+			req.Header.Set("Content-Type", "application/json")
+
+			hc := &http.Client{Timeout: 5 * time.Second}
+			if resp, err := hc.Do(req); err == nil && resp.StatusCode == http.StatusOK {
+				defer resp.Body.Close()
+				var resMap struct {
+					Suggestions []struct {
+						PlacePrediction struct {
+							PlaceID string `json:"placeId"`
+							Text    struct {
+								Text string `json:"text"`
+							} `json:"text"`
+						} `json:"placePrediction"`
+					} `json:"suggestions"`
+				}
+				if err := json.NewDecoder(resp.Body).Decode(&resMap); err == nil && len(resMap.Suggestions) > 0 {
+					var results []VenueSuggestion
+					for _, item := range resMap.Suggestions {
+						if item.PlacePrediction.Text.Text != "" {
+							results = append(results, VenueSuggestion{
+								PlaceID: item.PlacePrediction.PlaceID,
+								Text:    item.PlacePrediction.Text.Text,
+							})
+						}
+					}
+					if len(results) > 0 {
+						return results
+					}
+				}
+			}
+		}
+	}
+
+	// 2. Gemini AI Venue Agent
+	if geminiKey != "" {
+		sug, err := GenerateAIVenueSuggestions(geminiKey, config.LoadConfig().GeminiTextModel, eventType, q)
+		if err == nil && len(sug) > 0 {
+			return sug
+		}
+	}
+
+	// 3. Fallback Curated Suggestions
+	return []VenueSuggestion{
+		{PlaceID: "place-1", Text: q + ", Main Road, Bengaluru, Karnataka"},
+		{PlaceID: "place-2", Text: "The Leela Palace, HAL Old Airport Road, Kodihalli, Bengaluru"},
+		{PlaceID: "place-3", Text: "Palace Grounds, Jayamahal Road, Bengaluru, Karnataka"},
+		{PlaceID: "place-4", Text: "Taj West End, Race Course Road, Bengaluru, Karnataka"},
+	}
+}
+
+// FetchPlaceDetails fetches full 7 venue details for a placeId matching web version /api/places/details
+func FetchPlaceDetails(placeID string, placesKey string) config.VenueDetails {
+	cleanID := strings.TrimSpace(placeID)
+	defaultPhoto := "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1200&q=80"
+
+	if placesKey != "" && strings.HasPrefix(cleanID, "ChI") {
+		reqURL := fmt.Sprintf("https://places.googleapis.com/v1/places/%s", cleanID)
+		req, err := http.NewRequestWithContext(context.Background(), "GET", reqURL, nil)
+		if err == nil {
+			req.Header.Set("X-Goog-Api-Key", placesKey)
+			req.Header.Set("X-Goog-FieldMask", "displayName,formattedAddress,googleMapsUri,adrFormatAddress,photos")
+
+			hc := &http.Client{Timeout: 5 * time.Second}
+			if resp, err := hc.Do(req); err == nil && resp.StatusCode == http.StatusOK {
+				defer resp.Body.Close()
+				var placeRes struct {
+					DisplayName struct {
+						Text string `json:"text"`
+					} `json:"displayName"`
+					FormattedAddress string `json:"formattedAddress"`
+					GoogleMapsURI    string `json:"googleMapsUri"`
+					AdrFormatAddress string `json:"adrFormatAddress"`
+					Photos           []struct {
+						Name string `json:"name"`
+					} `json:"photos"`
+				}
+				if err := json.NewDecoder(resp.Body).Decode(&placeRes); err == nil {
+					primary := placeRes.DisplayName.Text
+					if primary == "" {
+						primary = placeRes.FormattedAddress
+					}
+					photoURL := defaultPhoto
+					if len(placeRes.Photos) > 0 && placeRes.Photos[0].Name != "" {
+						photoURL = fmt.Sprintf("https://places.googleapis.com/v1/%s/media?key=%s&maxHeightPx=600&maxWidthPx=800", placeRes.Photos[0].Name, placesKey)
+					}
+
+					return config.VenueDetails{
+						PrimaryVenue:           primary,
+						VenueFormattedAddress:  placeRes.FormattedAddress,
+						VenueAdrFormatAddress:  placeRes.AdrFormatAddress,
+						Address:                placeRes.FormattedAddress,
+						GoogleMapURL:            placeRes.GoogleMapsURI,
+						GoogleMapDirectionsURL: fmt.Sprintf("https://www.google.com/maps/dir/?api=1&destination=%s&destination_place_id=%s", url.QueryEscape(primary+", "+placeRes.FormattedAddress), cleanID),
+						VenuePhotoURL:           photoURL,
+						PlaceID:                  cleanID,
+					}
+				}
+			}
+		}
+	}
+
+	// Fallback for non-ChI Place IDs / Gemini Suggestions
+	primary := cleanID
+	if strings.Contains(cleanID, ",") {
+		parts := strings.SplitN(cleanID, ",", 2)
+		primary = strings.TrimSpace(parts[0])
+	}
+	return config.VenueDetails{
+		PrimaryVenue:           primary,
+		VenueFormattedAddress:  cleanID,
+		VenueAdrFormatAddress:  cleanID,
+		Address:                cleanID,
+		GoogleMapURL:            fmt.Sprintf("https://maps.google.com/?q=%s", url.QueryEscape(cleanID)),
+		GoogleMapDirectionsURL: fmt.Sprintf("https://www.google.com/maps/dir/?api=1&destination=%s", url.QueryEscape(cleanID)),
+		VenuePhotoURL:           defaultPhoto,
+		PlaceID:                  cleanID,
+	}
 }
 
 // GenerateAIImage generates image bytes using Gemini/Imagen models configured strictly in .env
