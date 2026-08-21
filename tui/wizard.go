@@ -3,6 +3,8 @@ package tui
 import (
 	"fmt"
 	"strings"
+
+	"github.com/Ekarna-Interactive/labs-shubhplan-ai/generator"
 )
 
 var predefinedEventTypes = []string{
@@ -268,6 +270,45 @@ func resolveCurrencyChoice(input string, activeIdx int) string {
 	}
 }
 
+func renderVenueMenu(items []generator.VenueSuggestion, activeIdx int, query string) string {
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("📍 Select Google Places & AI Autocomplete match for '%s':\n", query))
+	for i, item := range items {
+		if i == activeIdx {
+			sb.WriteString(fmt.Sprintf("  ❯ [ %d. %s ]\n", i+1, item.Text))
+		} else {
+			sb.WriteString(fmt.Sprintf("    %d. %s\n", i+1, item.Text))
+		}
+	}
+	sb.WriteString("\nPress ↑/↓ to navigate, Enter to select option, or type custom venue name:")
+	return sb.String()
+}
+
+func resolveVenueChoice(input string, items []generator.VenueSuggestion, activeIdx int, fallback string) generator.VenueSuggestion {
+	trimmed := strings.TrimSpace(input)
+	if trimmed != "" {
+		for i, item := range items {
+			if fmt.Sprintf("%d", i+1) == trimmed {
+				return item
+			}
+		}
+		return generator.VenueSuggestion{
+			PlaceID: "custom-" + trimmed,
+			Text:    trimmed,
+		}
+	}
+	if activeIdx >= 0 && activeIdx < len(items) {
+		return items[activeIdx]
+	}
+	if len(items) > 0 {
+		return items[0]
+	}
+	return generator.VenueSuggestion{
+		PlaceID: "custom-" + fallback,
+		Text:    fallback,
+	}
+}
+
 func getOptionCountForStep(step WizardStep) int {
 	switch step {
 	case StepEventType:
@@ -287,6 +328,13 @@ func getOptionCountForStep(step WizardStep) int {
 	}
 }
 
+func (m *Model) getOptionCount() int {
+	if m.Step == StepVenueSelection {
+		return len(m.VenueSuggestions)
+	}
+	return getOptionCountForStep(m.Step)
+}
+
 func (m *Model) updateActiveStepMenuText() {
 	if len(m.Logs) == 0 {
 		return
@@ -301,6 +349,8 @@ func (m *Model) updateActiveStepMenuText() {
 		m.Logs[lastIdx].Text = renderAspectMenu(m.OptionIndex)
 	case StepStyleSelection:
 		m.Logs[lastIdx].Text = renderStyleMenu(m.OptionIndex)
+	case StepVenueSelection:
+		m.Logs[lastIdx].Text = renderVenueMenu(m.VenueSuggestions, m.OptionIndex, m.VenueSearchQuery)
 	case StepAwaitingWelcomeChoice:
 		m.Logs[lastIdx].Text = renderWelcomeSuggestionMenu(m.WelcomeSuggestions, m.OptionIndex)
 	case StepAwaitingSuggestionChoice:

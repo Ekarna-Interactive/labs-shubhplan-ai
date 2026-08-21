@@ -374,6 +374,8 @@ func SaveStructuredEventProfileWithBudget(eventType, hostNames, eventDate, venue
 		HostNames:       hostNames,
 		EventDate:       eventDate,
 		Venue:           venue,
+		VenueAddress:    existingProfile.VenueAddress,
+		VenueDetails:    existingProfile.VenueDetails,
 		DefaultCurrency: currency,
 		WelcomeMessage:  welcomeMsg,
 		TargetAspect:    targetAspect,
@@ -407,14 +409,45 @@ func SaveStructuredEventProfileWithBudget(eventType, hostNames, eventDate, venue
 	return os.WriteFile(filePath, []byte(mdContent), 0644)
 }
 
-// SaveFullEventProfile persists an EventProfile struct directly to data/event-details.json
+// SaveFullEventProfile persists an EventProfile struct directly to data/event-details.json and event_details.md
 func SaveFullEventProfile(p EventProfile) error {
 	jsonPath := getEventJSONFilePath()
-	jBytes, err := json.MarshalIndent(p, "", "  ")
-	if err != nil {
-		return err
+	if jBytes, err := json.MarshalIndent(p, "", "  "); err == nil {
+		_ = os.WriteFile(jsonPath, jBytes, 0644)
 	}
-	return os.WriteFile(jsonPath, jBytes, 0644)
+
+	filePath := filepath.Join(".", EventProfileFilename)
+
+	mdContent := fmt.Sprintf(`# 📋 Active Event Profile
+
+- **Event Type**: %s
+- **Hosts**: %s
+- **Date**: %s
+- **Venue**: %s
+- **Address**: %s
+- **Currency**: %s
+- **Welcome Message**: %s
+
+## 💡 Notes & Details
+%s
+`, p.EventType, p.HostNames, p.EventDate, p.Venue, p.VenueAddress, p.DefaultCurrency, p.WelcomeMessage, p.RawDetails)
+
+	return os.WriteFile(filePath, []byte(mdContent), 0644)
+}
+
+// SaveVenueDetails updates the venue_details object in data/event-details.json
+func SaveVenueDetails(vd VenueDetails) error {
+	p, _ := LoadEventProfile()
+	p.VenueDetails = vd
+	if vd.PrimaryVenue != "" {
+		p.Venue = vd.PrimaryVenue
+	}
+	if vd.VenueFormattedAddress != "" {
+		p.VenueAddress = vd.VenueFormattedAddress
+	} else if vd.Address != "" {
+		p.VenueAddress = vd.Address
+	}
+	return SaveFullEventProfile(p)
 }
 
 // SaveStructuredEventProfile persists structured event details into event_details.md

@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/Ekarna-Interactive/labs-shubhplan-ai/client"
@@ -51,7 +52,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						m.Config.GeminiAPIKey = keyVal
 						m.Logs = append(m.Logs, LogEntry{
 							Sender: "SYSTEM",
-							Text:   "✨ Saved GEMINI_API_KEY to local .env file! Live AI generation enabled.",
+							Text:   "✨ Saved GEMINI_API_KEY! Live AI generation enabled.",
 						})
 					} else {
 						m.Logs = append(m.Logs, LogEntry{
@@ -60,8 +61,32 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						})
 					}
 
-					// Step 2: Check Honcho API Key
+					// Step 2: Check Google Places API Key
 					m.SetupStep = 1
+					m.SetupInput.Reset()
+					m.SetupInput.Placeholder = "Paste Places API Key here (or press Enter to use Gemini AI Venue Agent)"
+					m.Logs = append(m.Logs, LogEntry{
+						Sender: "SETUP",
+						Text:   "📍 OPTIONAL SETUP: GOOGLE_PLACES_API_KEY check.\nGet key from Google Cloud Console (Places API New).\nEnter key below for live Google Places venue search, or press Enter to use Gemini AI Venue Agent / Curated Search.",
+					})
+					return m, nil
+
+				case 1:
+					if keyVal != "" {
+						_ = config.SavePlacesAPIKey(keyVal)
+						m.Logs = append(m.Logs, LogEntry{
+							Sender: "SYSTEM",
+							Text:   "✨ Saved GOOGLE_PLACES_API_KEY! Live Google Places venue search active.",
+						})
+					} else {
+						m.Logs = append(m.Logs, LogEntry{
+							Sender: "SYSTEM",
+							Text:   "💡 GOOGLE_PLACES_API_KEY omitted. Operating with Gemini AI Venue Agent & Curated Autocomplete.",
+						})
+					}
+
+					// Step 3: Check Honcho API Key
+					m.SetupStep = 2
 					m.SetupInput.Reset()
 					m.SetupInput.Placeholder = "Paste Honcho API Key here (or press Enter to use Inbuilt Local Memory Store)"
 					m.Logs = append(m.Logs, LogEntry{
@@ -70,13 +95,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					})
 					return m, nil
 
-				case 1:
+				case 2:
 					if keyVal != "" {
 						_ = config.SaveHonchoAPIKey(keyVal)
 						client.GetHonchoManager().SetAPIKey(keyVal)
 						m.Logs = append(m.Logs, LogEntry{
 							Sender: "SYSTEM",
-							Text:   "✨ Saved HONCHO_API_KEY to local .env file! Honcho Cloud Memory sync active.",
+							Text:   "✨ Saved HONCHO_API_KEY! Honcho Cloud Memory sync active.",
 						})
 					} else {
 						m.Logs = append(m.Logs, LogEntry{
@@ -163,7 +188,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 
 		case "up":
-			maxOpts := getOptionCountForStep(m.Step)
+			maxOpts := m.getOptionCount()
 			if maxOpts > 0 {
 				m.OptionIndex = (m.OptionIndex - 1 + maxOpts) % maxOpts
 				m.updateActiveStepMenuText()
@@ -175,7 +200,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 
 		case "down":
-			maxOpts := getOptionCountForStep(m.Step)
+			maxOpts := m.getOptionCount()
 			if maxOpts > 0 {
 				m.OptionIndex = (m.OptionIndex + 1) % maxOpts
 				m.updateActiveStepMenuText()
@@ -322,10 +347,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			})
 
 			url := web.StartServer(m.Config.Port)
-			web.OpenBrowser(url)
+			previewURL := url
+
+			if publicURL := strings.TrimSpace(os.Getenv("PUBLIC_URL")); publicURL != "" {
+				previewURL = strings.TrimSuffix(publicURL, "/")
+			} else if appURL := strings.TrimSpace(os.Getenv("APP_URL")); appURL != "" {
+				previewURL = strings.TrimSuffix(appURL, "/")
+			} else if flyApp := strings.TrimSpace(os.Getenv("FLY_APP_NAME")); flyApp != "" {
+				previewURL = fmt.Sprintf("https://%s.fly.dev", flyApp)
+			} else if os.Getenv("SERVER_MODE") != "true" {
+				web.OpenBrowser(url)
+			}
+
 			m.Logs = append(m.Logs, LogEntry{
 				Sender: "SYSTEM",
-				Text:   fmt.Sprintf("✨ Real-time preview server running at %s?sessionID=%s", url, m.SessionID),
+				Text:   fmt.Sprintf("✨ Real-time preview server running at %s?sessionID=%s", previewURL, m.SessionID),
 			})
 		}
 		m.StatusMsg = "Ready"
