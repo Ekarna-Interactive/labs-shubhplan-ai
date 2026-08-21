@@ -13,6 +13,10 @@
 
 [Quickstart](#-quickstart) • [Feature Matrix](#-feature-capabilities--api-key-matrix) • [Architecture](#-architecture) • [Key Features](#-key-features) • [User Interfaces](#-user-interfaces) • [Data Persistence](#-unified-data-persistence-data) • [TUI Guide](TUI.md) • [Deployment Guide](DEPLOYMENT.md) • [Environment Setup](#%EF%B8%8F-environment-configuration)
 
+> 🌐 **Live Web Demo**: [https://shubh-plan-open.fly.dev](https://shubh-plan-open.fly.dev)  
+> 🔑 **Demo Owner Login**: `admin@shubhplan.ai` / `shubh2026`  
+> 💻 **Live SSH TUI Demo**: `ssh -p 2222 shubh-plan-open.fly.dev`
+
 </div>
 
 ```mermaid
@@ -191,6 +195,7 @@ All workspace state is persisted inside `./data/` (or Fly.io persistent volume m
 | `GEMINI_IMAGE_MODEL` | `gemini-3.1-flash-image` | Model for invitation card artwork generation. |
 | `GOOGLE_PLACES_API_KEY` | *(Optional)* | Key for live Google Places venue search. Uses AI fallback if empty. |
 | `HONCHO_API_KEY` | *(Optional)* | Key for `api.honcho.dev/v3`. Defaults to zero-config local JSON store if empty. |
+| `SSH_HOST_KEY` | *(Optional Secret)* | PEM-encoded Ed25519 private key for Wish SSH server host fingerprint persistence across redeployments. |
 | `HONCHO_APP_ID` | `shubh-plan-ai` | Honcho Application ID namespace. |
 | `SERVER_MODE` / `MULTI_USER` | `false` | Enable to prevent client browser keys from writing to global server `.env`. |
 | `PORT` | `3000` | HTTP Web UI server listening port. |

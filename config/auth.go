@@ -168,6 +168,14 @@ func IsSetupCompleted() bool {
 	return false
 }
 
+// EnsureDefaultDemoUser seeds the pre-configured demo admin account if DEMO_MODE or SEED_DEMO_USER is active and no users exist
+func EnsureDefaultDemoUser() {
+	demoEnabled := getEnvClean("DEMO_MODE") == "true" || getEnvClean("DEMO_MODE") == "1" || getEnvClean("SEED_DEMO_USER") == "true" || getEnvClean("SEED_DEMO_USER") == "1"
+	if demoEnabled && !IsSetupCompleted() {
+		_, _ = CreateUser("admin@shubhplan.ai", "shubh2026", "Demo Workspace Owner", RoleAdmin)
+	}
+}
+
 // CreateUser registers a new user record
 func CreateUser(email, password, fullName string, role UserRole) (User, error) {
 	cleanEmail := strings.ToLower(strings.TrimSpace(email))
