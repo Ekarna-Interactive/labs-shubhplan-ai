@@ -9,8 +9,17 @@ primary_region = "sin"
   SSH_PORT = "2222"
   SERVER_MODE = "true"
   MULTI_USER = "true"
+  DEMO_MODE = "true"
+  GEMINI_TEXT_MODEL = "gemini-3.5-flash"
+  GEMINI_FALLBACK_TEXT_MODEL = "gemini-2.5-flash"
+  GEMINI_IMAGE_MODEL = "gemini-3.1-flash-image"
+  GEMINI_FALLBACK_IMAGE_MODEL = "gemini-2.5-flash-image"
   SHUBH_DATA_DIR = "/app/data"
   SHUBH_OUTPUT_DIR = "/app/output"
+
+[mounts]
+  source = "shubh_data"
+  destination = "/app/data"
 
 [http_service]
   internal_port = 3000

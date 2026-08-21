@@ -1136,7 +1136,10 @@ func (s *HTTPServer) Start() error {
 			return
 		}
 
-		outputDir := "./output"
+		outputDir := config.LoadConfig().OutputDir
+		if outputDir == "" {
+			outputDir = "./output"
+		}
 		_ = os.MkdirAll(outputDir, 0755)
 
 		sessionID := fmt.Sprintf("session-%s", profile.GetEventID())
@@ -1153,13 +1156,24 @@ func (s *HTTPServer) Start() error {
 
 	// List Generated Output Cards API (/api/outputs & /api/cards)
 	outputsHandler := func(w http.ResponseWriter, r *http.Request) {
-		outputDir := "./output"
+		outputDir := config.LoadConfig().OutputDir
+		if outputDir == "" {
+			outputDir = "./output"
+		}
+		_ = os.MkdirAll(outputDir, 0755)
+
 		entries, err := os.ReadDir(outputDir)
 		w.Header().Set("Content-Type", "application/json")
 
 		sessionID := r.URL.Query().Get("sessionID")
 		if sessionID == "" {
 			sessionID = r.Header.Get("X-Session-ID")
+		}
+		if sessionID == "" {
+			profile, _ := config.LoadEventProfile()
+			if profile.GetEventID() != "" {
+				sessionID = "session-" + profile.GetEventID()
+			}
 		}
 
 		type CardItem struct {
@@ -1172,12 +1186,7 @@ func (s *HTTPServer) Start() error {
 		if err == nil {
 			for _, entry := range entries {
 				if !entry.IsDir() && (strings.HasSuffix(entry.Name(), ".png") || strings.HasSuffix(entry.Name(), ".jpg")) {
-					if sessionID != "" {
-						if !strings.Contains(entry.Name(), sessionID) {
-							continue
-						}
-					} else if os.Getenv("MULTI_USER") == "true" || os.Getenv("SERVER_MODE") == "true" {
-						// Strict multi-user isolation: unauthenticated requests with no sessionID see zero output cards
+					if sessionID != "" && strings.Contains(entry.Name(), "session-") && !strings.Contains(entry.Name(), sessionID) {
 						continue
 					}
 					info, err := entry.Info()
@@ -1212,7 +1221,12 @@ func (s *HTTPServer) Start() error {
 	mux.HandleFunc("/api/cards", outputsHandler)
 
 	// Static asset server for output cards
-	fileServer := http.FileServer(http.Dir("./output"))
+	outDirStatic := config.LoadConfig().OutputDir
+	if outDirStatic == "" {
+		outDirStatic = "./output"
+	}
+	_ = os.MkdirAll(outDirStatic, 0755)
+	fileServer := http.FileServer(http.Dir(outDirStatic))
 	mux.Handle("/output/", http.StripPrefix("/output/", fileServer))
 
 	serverAddr := fmt.Sprintf(":%d", s.port)

@@ -18,7 +18,9 @@ services:
       - SHUBH_DATA_DIR=/app/data
       - SHUBH_OUTPUT_DIR=/app/output
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GOOGLE_PLACES_API_KEY=${GOOGLE_PLACES_API_KEY:-}
       - HONCHO_API_KEY=${HONCHO_API_KEY:-}
+      - SSH_HOST_KEY=${SSH_HOST_KEY:-}
     volumes:
       - ./data:/app/data
       - ./output:/app/output

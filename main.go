@@ -34,6 +34,9 @@ func main() {
 	os.MkdirAll(*dataDir, 0755)
 	os.MkdirAll("./output", 0755)
 
+	// Ensure default demo admin account is pre-configured
+	config.EnsureDefaultDemoUser()
+
 	// Redirect logger to data/app.log to prevent terminal screen corruption in TUI mode
 	logFile, err := os.OpenFile(filepath.Join(*dataDir, "app.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err == nil {
