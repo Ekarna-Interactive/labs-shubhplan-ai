@@ -70,8 +70,16 @@ window.ChatWidgets = (function () {
           </div>
 
           <div class="chat-widget-field">
-            <label class="chat-widget-label">Dietary Preferences / Notes</label>
-            <input type="text" class="form-control form-control-sm widget-guest-notes" placeholder="E.g., Vegetarian / Jain food preferred">
+            <label class="chat-widget-label">Dietary Preference</label>
+            <select class="form-control form-control-sm widget-guest-notes" style="background: rgba(15, 23, 42, 0.9); color: #F8FAFC; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 6px 10px; font-size: 0.85rem; width: 100%;">
+              <option value="No Preference">No Specific Preference (Standard)</option>
+              <option value="Vegetarian">🥗 Vegetarian (Pure Veg)</option>
+              <option value="Jain">🪷 Jain (No Onion / No Garlic)</option>
+              <option value="Vegan">🌱 Vegan (Plant-Based)</option>
+              <option value="Halal">🌙 Halal</option>
+              <option value="Eggetarian">🥚 Eggetarian</option>
+              <option value="Gluten-Free">🌾 Gluten-Free / Special Allergies</option>
+            </select>
           </div>
 
           <button type="submit" class="btn btn-sm btn-accent btn-block widget-submit-btn" style="margin-top:8px;">
