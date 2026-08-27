@@ -1,188 +1,126 @@
-# ✨ Shubh Plan AI — Open-Source Multi-Agent Event Engine
+# ✨ Shubh Plan Web — AI Event Operating System & Bespoke Invitation Studio
 
 <div align="center">
 
-[![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://go.dev)
-[![Google ADK v2](https://img.shields.io/badge/Google%20ADK-v2.2.0-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://google.golang.org/adk)
-[![Honcho v3 REST](https://img.shields.io/badge/Honcho%20Memory-v3%20REST-7C3AED?style=for-the-badge)](https://honcho.dev)
-[![Wish SSH TUI](https://img.shields.io/badge/Wish%20SSH-Bubble%20Tea-FF4081?style=for-the-badge)](https://github.com/charmbracelet/wish)
-[![HTMX Web UI](https://img.shields.io/badge/HTMX-Tailwind%20CSS-38BDF8?style=for-the-badge&logo=htmx&logoColor=white)](https://htmx.org)
+[![Go Version](https://img.shields.io/badge/Go-1.25+-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://go.dev)
+[![Firebase Genkit](https://img.shields.io/badge/Genkit-v1.12-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com/docs/genkit-go)
+[![Argon2id Auth](https://img.shields.io/badge/Auth-Argon2id-7C3AED?style=for-the-badge)](pkg/auth)
+[![HTMX Web UI](https://img.shields.io/badge/HTMX-Vanilla%20CSS-38BDF8?style=for-the-badge&logo=htmx&logoColor=white)](https://htmx.org)
+[![Fly.io Ready](https://img.shields.io/badge/Fly.io-Deployment%20Ready-24185B?style=for-the-badge&logo=fly.io&logoColor=white)](fly.toml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=for-the-badge&logo=apache)](LICENSE)
 
-**Shubh Plan AI is an all-in-one event planning workspace and invitation studio. It helps hosts and event planners design personalized invitation artwork, structure ceremony schedules, manage guest RSVPs and dietary requirements, and coordinate every celebration detail through an intuitive AI copilot.**
+**Shubh Plan Web is an all-in-one AI-native event planning workspace and generative invitation studio. It empowers event planners and hosts to design high-resolution invitation artwork, verify venue details with Google Maps, manage guest RSVPs and dietary needs, and coordinate ceremony schedules in real time.**
 
-[Quickstart](#-quickstart) • [Feature Matrix](#-feature-capabilities--api-key-matrix) • [Architecture](#-architecture) • [Key Features](#-key-features) • [User Interfaces](#-user-interfaces) • [Data Persistence](#-unified-data-persistence-data) • [TUI Guide](TUI.md) • [Deployment Guide](DEPLOYMENT.md) • [Environment Setup](#%EF%B8%8F-environment-configuration)
+[Quickstart](#-quickstart) • [Architecture](#-architecture) • [Feature Capabilities](#-feature-capabilities) • [Operating Modes](#-operating-modes--byok) • [Data Persistence](#-unified-data-persistence) • [Deployment Guide](DEPLOYMENT.md) • [Environment Setup](#%EF%B8%8F-environment-configuration)
 
-> 🌐 **Live Web Demo**: [https://shubh-plan-open.fly.dev](https://shubh-plan-open.fly.dev)  
-> 🔑 **Demo Owner Login**: `admin@shubhplan.ai` / `shubh2026`  
-> 💻 **Live SSH TUI Demo**: `ssh -p 2222 shubh-plan-open.fly.dev`
+> 🌐 **Live Web Demo**: [https://shubh-plan-demo.fly.dev](https://shubh-plan-demo.fly.dev)  
+> 🔑 **Pre-seeded Admin Account**: `admin@shubhplan.ai` / `shubh2026` (Argon2id Auth)  
+> ⚡ **Demo Key Setup**: Bring Your Own Gemini API Key (BYOK) via top-bar settings modal or 1-click Instant Guest Demo.
 
 </div>
+
+---
 
 ```mermaid
 graph TD
     classDef web fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
-    classDef tui fill:#0f172a,stroke:#ff4081,stroke-width:2px,color:#f8fafc;
     classDef core fill:#1e1b4b,stroke:#818cf8,stroke-width:2px,color:#f8fafc;
+    classDef cloud fill:#0284c7,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
     classDef store fill:#064e3b,stroke:#34d399,stroke-width:2px,color:#f8fafc;
 
-    subgraph CLIENTS ["🌐 Dual User Interfaces"]
-        WEB["🌐 HTMX Web Dashboard<br/><i>(Port 3000 • Single-Page Dashboard)</i>"]:::web
-        TUI["💻 Wish SSH Terminal UI<br/><i>(Port 2222 • Zero-Client Install)</i>"]:::tui
+    subgraph CLIENTS ["🌐 Client Web User Interface"]
+        WEB["🌐 HTMX & Vanilla JS SPA<br/><i>(Port 3000 • Single-Page Dashboard)</i>"]:::web
+        SSE["⚡ SSE Real-Time Streaming Chat<br/><i>(Server-Sent Events)</i>"]:::web
     end
 
-    subgraph CORE ["⚡ Unified Go ADK Engine"]
-        AUTH["🔐 Native Argon2id Auth Engine"]:::core
-        ADK["🤖 Google ADK v2 Multi-Agent Engine<br/><i>(Concierge, Timeline, Budget, RSVP)</i>"]:::core
-        SYNC["🔄 1:1 Live Real-Time Controls Sync"]:::core
+    subgraph CORE ["⚡ Shubh Plan Web Core"]
+        AUTH["🔐 Native Argon2id Auth Engine<br/><i>(pkg/auth • Session Cookies)</i>"]:::core
+        GENKIT["🤖 Firebase Genkit AI Engine<br/><i>(pkg/genkit • 4 Registered Flows & Tools)</i>"]:::core
+        AGENTS["🧠 Multi-Agent Flow Registry<br/><i>(Planner, Designer, RSVP, Logistics)</i>"]:::core
     end
 
-    subgraph DATA ["📦 Unified Data Persistence"]
-        JSON["📄 Local JSON & Markdown Store<br/><i>(event-details.json, itinerary.json, rsvps.json)</i>"]:::store
-        MEM["🧠 Smart Memory Driver<br/><i>(Local Vector Store & Honcho v3 Cloud)</i>"]:::store
+    subgraph CLOUD ["☁️ Google AI & Places Cloud"]
+        GEMINI["✨ Google Gemini LLM & Imagen API<br/><i>(gemini-2.5-flash / gemini-1.5-flash)</i>"]:::cloud
+        PLACES["📍 Google Places Search API<br/><i>(Verified Venues & Photos)</i>"]:::cloud
+    end
+
+    subgraph DATA ["📦 Unified Data Persistence (/app/data)"]
+        USERDB["📄 Users & Sessions Store<br/><i>(users.json • Argon2id Hashes)</i>"]:::store
+        STOREDB["📄 Event Domain Store<br/><i>(store.json • Events, Guests, Designs)</i>"]:::store
+        ASSETS["🎨 Card Assets Store<br/><i>(web/assets/*.png • PNG Artwork)</i>"]:::store
     end
 
     WEB <--> AUTH
-    TUI <--> AUTH
-    WEB <--> ADK
-    TUI <--> ADK
-    ADK <--> SYNC
-    SYNC <--> JSON
-    ADK <--> MEM
+    WEB <--> GENKIT
+    SSE <--> GENKIT
+    GENKIT <--> AGENTS
+    AGENTS <--> GEMINI
+    AGENTS <--> PLACES
+    AUTH <--> USERDB
+    GENKIT <--> STOREDB
+    GENKIT --> ASSETS
 ```
 
 ---
 
-## 🚀 Quickstart
+## ⚡ Quickstart
 
-### 📋 Prerequisites
-
-Before running `shubh-plan-open`, ensure you have the following installed:
-
-* **Go 1.22 or higher**: [Download Go](https://go.dev/dl/) *(Required for building from source)*
-* **Docker & Docker Compose**: [Download Docker](https://www.docker.com/) *(Optional, recommended for quick containerized setup)*
-* **SSH Client**: Standard OpenSSH client (`ssh`) *(Built-in on Linux, macOS, and Windows PowerShell)*
-
----
-
-### Option A: Run with Docker Compose (Recommended)
+Launch **Shubh Plan Web** locally in one command:
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/Ekarna-Interactive/labs-shubhplan-ai.git
-cd labs-shubhplan-ai
+cd apps/shubh-plan-web
 
-# 2. Launch with Docker Compose
-docker compose up -d
+# Run the local web server
+go run main.go
 ```
 
-### Option B: Build & Run from Source (Go 1.22+)
-
-```bash
-# 1. Clone and enter repository directory
-git clone https://github.com/Ekarna-Interactive/labs-shubhplan-ai.git
-cd labs-shubhplan-ai
-
-# 2. Build single Go binary
-go build -o shubh-plan-open .
-
-# 3. Launch in server mode (Web UI + SSH TUI Server)
-./shubh-plan-open --server
-```
-
-### 📍 Accessing Your Workspace
-
-* **🌐 HTMX Web Dashboard**: Open [`http://localhost:3000`](http://localhost:3000) in your browser. On fresh boot, follow the on-screen **Owner Setup Wizard** to create your primary account.
-* **💻 Wish SSH Terminal UI**: Connect instantly via `ssh -i ~/.ssh/id_ed25519 -p 2222 localhost`.
+Open your browser and navigate to:
+- 🌐 **Web Interface**: [`http://localhost:3000`](http://localhost:3000)
+- 🔍 **Healthcheck Endpoint**: [`http://localhost:3000/api/health`](http://localhost:3000/api/health)
 
 ---
 
-## ⚡ Feature Capabilities & API Key Matrix
+## ✨ Feature Capabilities
 
-`shubh-plan-open` is designed with zero-dependency offline fallbacks. You can run and evaluate the application completely keyless in **Offline Dry-Run Mode**, or supply API keys to unlock cloud AI features:
+### 🔐 1. Dual Operating Modes & Bring Your Own Key (BYOK)
+- **Demo Mode (`APP_MODE=demo`)**: Tailored for public cloud deployments (e.g. Fly.io). Server-side API key is unconfigured by default. Users provide their own free Gemini API key in a top-bar settings modal (stored strictly in browser `localStorage` for privacy). Includes 1-click **Instant Guest Demo** with pre-populated sample event data.
+- **Server Mode (`APP_MODE=server`)**: Designed for local or private server usage. Automatically loads system environment variables (`GEMINI_API_KEY`, `GOOGLE_MAPS_API_KEY`) from `.env` for zero-configuration team access.
 
-| Feature Area | Keyless / Offline Dry-Run Mode | Cloud Key Unlocked Mode | Required Key |
-| :--- | :--- | :--- | :--- |
-| **Authentication & Accounts** | 🟢 Full Native Argon2id (`data/users.json`) | 🟢 Full Native Auth & SSH Key Mapping | ✅ None *(Inbuilt)* |
-| **Event Profile & Itinerary** | 🟢 Local Profile & Timeline Editor | 🟢 2-Way Sync with Markdown (`event_details.md`) | ✅ None *(Inbuilt)* |
-| **Guest RSVPs & Logistics** | 🟢 Headcount Meters & Dietary Export | 🟢 Headcount Meters & Dietary Export | ✅ None *(Inbuilt)* |
-| **Smart Memory Engine** | 🟢 Local Vector Store (`./data/honcho_memory.json`) | ☁️ Honcho Cloud Session Sync (`api.honcho.dev/v3`) | 🔑 `HONCHO_API_KEY` *(Optional)* |
-| **Venue Search & Maps** | 🟢 Inbuilt AI Venue Agent & Curated Autocomplete | ☁️ Live Google Places API Search & Metadata | 🔑 `GOOGLE_PLACES_API_KEY` *(Optional)* |
-| **AI Invitation Artwork** | 🟢 Concept Compilation & Layout Preview | 🤖 High-Res Gemini Imagen Generation | 🔑 `GEMINI_API_KEY` *(Required)* |
-| **AI Copilot Chat Engine** | 🟢 Basic Slash Commands & Layout Controls | 🤖 Multi-Agent Google ADK v2 Reasoning | 🔑 `GEMINI_API_KEY` *(Required)* |
+### 👤 2. Native Argon2id Authentication
+- **Enterprise-Grade Hashing**: Uses Argon2id password hashing (`$argon2id$...` with salt & key derivation) matching `apps/shubh-plan-open`.
+- **Session Security**: Supports `admin`, `planner`, and `guest` roles with secure `shubh_session` HTTP cookies and `X-Session-ID` headers.
+
+### 🎨 3. Bespoke AI Invitation Studio
+- **Dynamic Aspect Ratios**: Design in `9:16` vertical poster, `4:5` portrait, `1:1` square, or `16:9` landscape.
+- **7 Signature Aesthetic Presets**: Choose from *South Indian*, *Paper Cut 3D*, *Clay 3D*, *Pop Art*, *Mughal*, *Minimalist Gold*, and *Watercolor*.
+- **Custom Visual Elements & Typography**: Select custom tags (*marigold garlands, kolam art, vintage peacock*) and typography pairings (*Cinzel Decorative & Outfit*, *Great Vibes*, *Playfair Display*).
+- **Gemini LLM Prompt Synthesizer**: Click **"✨ Step 1: Generate AI Prompt Suggestions"** to invoke Gemini LLM as an AI Art Director to synthesize 4 custom prompt concepts.
+- **High-Res PNG Card Rendering**: Renders full-resolution `.png` card artwork with 1-click download and clipboard prompt copying.
+
+### 🤖 4. AI Event Assistant, Slash Commands & Component Widgets
+- **Conversational Setup & Real-Time SSE**: Real-time Server-Sent Events (SSE) chat for natural conversation setup (*"Plan a wedding for Maya & Vikram on Dec 20 at Hyatt Regency Mumbai"*) with real-time `⏳ Thinking...` loading states and glowing 3-dot typing animations.
+- **Interactive Quick Action Chips & Slash Commands (`/`)**: Trigger quick actions (`/summarize`, `/add-guests`, `/schedule`, `/generate-invitation`) via top chips or by typing `/` to open a floating backdrop-blur autocomplete menu with full keyboard (`Up`/`Down`/`Enter`/`Tab`) navigation.
+- **Modular In-Chat Component Widgets ([`web/widgets.js`](file:///c:/Users/Gokul/Documents/Programming/Antigravity/shubh-plan/apps/shubh-plan-web/web/widgets.js))**: Self-contained 1-click HTML form components embedded inside chat bubbles:
+  - **`AddGuestWidget`**: Category pills (`Family`, `Friends`, `VIPs`, `Colleagues`), RSVP pills, plus-ones counter, and guest name input.
+  - **`GenerateInvitationWidget`**: 2-step flow with style preset pills (`Clay 3D`, `South Indian`, `Paper Cut`, `Mughal`, etc.), aspect ratio pills (`4:5`, `9:16`, `1:1`, `16:9`), custom prompt input, 4 synthesized Gemini AI prompt option cards, and 1-click PNG artwork rendering.
+  - **`ScheduleSessionWidget`**: Session title, time, and location inputs.
+- **Full-Screen Artwork Preview Modal**: Click any generated card image in chat or Invitation Studio to open high-res `#preview-card-modal` with direct PNG download options.
+
+### 📍 5. Verified Venue Showcase & Google Places API
+- **Google Maps Integration**: Queries Google Places Text Search API for exact formatted addresses,Place IDs, 1-click Google Maps links, turn-by-turn directions, and real venue photos with fallback luxury banquet hall photography.
 
 ---
 
-## 🏗 Architecture
+## 📦 Unified Data Persistence
 
-| Layer | Implementation | Description |
+All application data is persisted in human-readable JSON files inside the data directory (`./data` locally or `/app/data` when deployed):
+
+| Data File | Contents | File Format |
 | :--- | :--- | :--- |
-| **Web Server** | Go `net/http` + Custom Middleware | Single Go binary serving HTMX partials, HTTP-Only session cookies, and SSE streams on port `3000`. |
-| **Terminal UI Server** | Charm Wish + Bubble Tea | Zero-install SSH terminal application serving interactive viewports and keybindings on port `2222`. |
-| **Authentication Engine** | Native Argon2id + POSIX `0600` | Gitea-style self-hosted user store (`data/users.json`) with password hashing and SSH public key auto-login. |
-| **Multi-Agent Engine** | Official Google ADK v2 (`adk/v2/agent`) | 5 specialized Go agents (`AI Concierge`, `GuestConcierge`, `TimelineAgent`, `BudgetAgent`, `VendorAgent`). |
-| **Smart Memory** | Honcho v3 REST + Local Fallback | Dual-mode memory driver syncing session representations with `api.honcho.dev/v3` or `./data/honcho_memory.json`. |
-| **Data Persistence** | POSIX Local Files & Unified JSON | Shared JSON files under `./data/` (`event-details.json`, `itinerary.json`, `rsvps.json`) 2-way synced across interfaces. |
-
----
-
-## 🌟 Key Features
-
-* **⚡ Unified Single Go Binary**: Operates 100% locally in Go with zero `node_modules` or JavaScript runtime requirements.
-* **🔐 Self-Hosted Native Go Authentication**: Zero-dependency user management engine storing Argon2id password hashes and SSH public keys in `data/users.json` with POSIX `0600` permissions. Features HTTP-Only 7-day session cookies (`shubh_session`) and First-Time Owner Setup.
-* **🎉 Guided Setup Wizards**: Onboarding modals for Owner account creation, Event Profile configuration, and API Key entry.
-* **🧩 Pure HTMX & Middleware Architecture**: Operates on a pure Go + HTMX engine with Go middleware (`HTMXMiddleware`, `APIKeyContextMiddleware`, `RequireAuthHTMX`), Out-of-Band (`hx-swap-oob`) multi-target swaps, and server event triggers (`HX-Trigger`).
-* **🔄 2-Way Live Real-Time Controls Synchronization**: Executing slash commands (`/aspect`, `/style`, `/welcome`, `/currency`) in Copilot chat instantly synchronizes Tab 1 (AI Invitation Studio) sidebar dropdown controls, `data/event-details.json`, and `event_details.md` in 100% real time.
-* **💬 Interactive Copilot Chat & Dynamic Autocomplete**: Real-time slash command autocomplete popup that filters as you type (`/sugg`, `/asp`, `/sty`), rendering rich, clickable option buttons directly in chat for `/suggest`, `/style`, `/aspect`, and `/currency`.
-* **🗓️ Ordinal Date Typography & Smart Banner Prompt Compiler**: Automatic date parser formatting dates into human-readable ordinal strings (`September 20th, 2026`) on generated invitation cards, with anti-blank prompt sanitization guaranteeing text is printed directly inside central banner plaques.
-* **📦 Unified JSON Storage & 1:1 Web/TUI Synchronization**: Shared data stores under `./data/`. Any update in Web UI (e.g. adding a ceremony sub-event or updating guest headcount) immediately reflects in the SSH TUI and vice versa.
-
----
-
-## 🖥 User Interfaces
-
-### 1. 🌐 HTMX Web Dashboard (`http://localhost:3000`)
-Features 5 modular workspace tabs:
-1. **✨ AI Invitation Studio**: Event parameters, aesthetic theme presets (South Indian Gold, Mughal Heritage, Paper Cut 3D, Minimalist), Gemini prompt compilation, and output card gallery.
-2. **👥 Guest Roster & RSVPs**: Real-time headcount meters (Confirmed, Pending, Declined), dietary breakdown chips, interactive guest table, and CSV download.
-3. **📅 Event Timeline**: Dynamic ceremony itinerary list (`data/itinerary.json`) with interactive form to add, view, and delete sub-events.
-4. **🤖 AI Concierge Copilot**: Real-time multi-agent chat interface connected via Server-Sent Events (SSE), Quick Pills bar, and slash autocomplete popup.
-5. **🧠 Smart Memory & Sub-Agents**: Live Honcho memory representations, recorded sessions, and cloud peer status.
-
-### 2. 💻 Wish SSH Terminal UI (`ssh -p 2222 localhost`)
-Interactive terminal application supporting live tab switching, keybindings, RSVP wizards (`/add-rsvp`), event profile editing (`/planner`, `/event`), and key setup prompts.
-
-📖 **For full SSH authentication, PowerShell setup, and TUI slash commands, see the dedicated [TUI Guide](TUI.md).**
-🚀 **For Fly.io cloud deployment, volume mounting, and IP configuration, see the [Deployment Guide](DEPLOYMENT.md).**
-
-#### 🔑 SSH Client Public Key Connection Methods
-
-Wish SSH uses standard SSH public key cryptography (`~/.ssh/id_ed25519` / `~/.ssh/id_rsa`).
-
-* **Interactive Connection (On-Screen Key Prompt)**:
-  ```bash
-  ssh -i ~/.ssh/id_ed25519 -p 2222 shubh-plan-ai.fly.dev
-  ```
-
-* **Direct One-Liner Connection (`SendEnv` Auto-Authentication)**:
-  ```bash
-  GEMINI_API_KEY="......" HONCHO_API_KEY="....." ssh -i ~/.ssh/id_ed25519 -o SendEnv=GEMINI_API_KEY -o SendEnv=HONCHO_API_KEY -p 2222 shubh-plan-ai.fly.dev
-  ```
-
----
-
-## 📦 Unified Data Persistence (`./data/`)
-
-All workspace state is persisted inside `./data/` (or Fly.io persistent volume mount at `/app/data/`):
-
-| File Path | Description | Security / Permissions |
-| :--- | :--- | :--- |
-| `data/users.json` | User accounts, Argon2id password hashes, roles, and SSH keys | POSIX `0600` (Owner read/write only) |
-| `data/event-details.json` | Canonical JSON representation of active event profile | POSIX `0644` |
-| `event_details.md` | Human-editable Markdown profile (2-way dual-synced with JSON) | POSIX `0644` |
-| `data/itinerary.json` | Ceremony sub-events, timeline slots, and run-of-show schedule | POSIX `0644` |
-| `data/rsvps.json` | Guest roster, headcount meters, and dietary requirements | POSIX `0644` |
-| `data/honcho_memory.json` | Local vector memory store for AI Concierge | POSIX `0644` |
+| `data/users.json` | User accounts, Argon2id password hashes, roles, and registration dates | POSIX `0644` JSON |
+| `data/store.json` | Active event profile, guest roster, itinerary run-of-show, and generated invitation designs | POSIX `0644` JSON |
+| `web/widgets.js` | Modular in-chat UI component widgets (`AddGuestWidget`, `GenerateInvitationWidget`, `ScheduleSessionWidget`) | Vanilla JS Module |
+| `web/assets/*.png` | High-resolution generated PNG invitation card artwork files | Binary PNG Images |
 
 ---
 
@@ -190,24 +128,17 @@ All workspace state is persisted inside `./data/` (or Fly.io persistent volume m
 
 | Variable | Default | Description |
 | :--- | :--- | :--- |
-| `GEMINI_API_KEY` | *(Optional)* | Server-wide Google Gemini API Key. Web/SSH users can override with client keys. |
-| `GEMINI_TEXT_MODEL` | `gemini-2.5-flash` | Primary text model for prompt compilation & copilot chat. |
-| `GEMINI_IMAGE_MODEL` | `imagen-3.0-generate-002` | Model for invitation card artwork generation. |
-| `GOOGLE_PLACES_API_KEY` | *(Optional)* | Key for live Google Places venue search. Uses Gemini AI Venue Agent if empty. |
-| `HONCHO_API_KEY` | *(Optional)* | Key for `api.honcho.dev/v3`. Defaults to zero-config local JSON store if empty. |
-| `SSH_HOST_KEY` | *(Optional Secret)* | PEM-encoded Ed25519 private key for Wish SSH server host fingerprint persistence across redeployments. |
-| `PUBLIC_URL` | *(Optional)* | Custom domain URL (e.g. `https://events.acme.com`) for self-hosted SSH TUI preview links. |
-| `DEMO_MODE` | `false` | Set `true` to auto-seed showcase demo user `admin@shubhplan.ai` / `shubh2026`. |
-| `SERVER_MODE` / `MULTI_USER` | `false` | Enable to isolate client browser keys from writing to global server `.env`. |
+| `GEMINI_API_KEY` | *(Optional)* | Server-wide Google Gemini API Key. Web users can override with client keys in Demo Mode. |
+| `APP_MODE` | `server` | Execution mode (`server` for local/on-premise vs `demo` for Fly.io BYOK). |
+| `SHUBH_DATA_DIR` | `./data` | Local directory for user accounts, RSVPs, itinerary JSON, and store persistence. |
 | `PORT` | `3000` | HTTP Web UI server listening port. |
-| `SSH_PORT` | `2222` | Wish SSH Terminal server listening port. |
-| `SHUBH_DATA_DIR` | `./data` | Local directory for user accounts, RSVPs, itinerary JSON, and memory store. |
+| `GOOGLE_MAPS_API_KEY` | *(Optional)* | Key for live Google Places venue search and photo fetching. |
 
 ---
 
 ## 🤝 Contributing
 
-`shubh-plan-open` operates under a source-available / read-only open-source model. Please see the [CONTRIBUTING.md](CONTRIBUTING.md) guide for details.
+`shubh-plan-web` operates under a source-available / read-only open-source model. Please see the [CONTRIBUTING.md](CONTRIBUTING.md) guide for details.
 
 ---
 

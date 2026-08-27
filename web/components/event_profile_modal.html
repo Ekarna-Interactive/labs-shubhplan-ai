@@ -1,0 +1,87 @@
+<!-- Event Profile Modal Component -->
+<div class="modal-backdrop" id="event-profile-modal">
+  <div class="modal-card auth-modal-card" style="max-width: 540px;">
+    <div class="auth-modal-header">
+      <div class="auth-brand-badge">
+        <span class="auth-brand-logo">👤</span>
+        <div class="auth-brand-title">Event Profile</div>
+      </div>
+      <p class="auth-modal-subtitle">Manage details, venue & theme for your active event</p>
+      <button type="button" class="close-btn" id="close-event-profile-modal-btn" onclick="closeModal('event-profile-modal')">&times;</button>
+    </div>
+    <div class="modal-body auth-modal-body">
+      <form id="event-profile-form" hx-post="/api/event" hx-target="#profile-summary-box" hx-swap="innerHTML" hx-on::after-request="closeModal('event-profile-modal')">
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="profile-title-input">Event Title</label>
+            <input type="text" name="title" id="profile-title-input" class="form-control dark-input" placeholder="e.g., Aarav's Naming Ceremony" required>
+          </div>
+          <div class="form-group flex-1">
+            <label for="profile-type-input">Event Type</label>
+            <select name="eventType" id="profile-type-input" class="form-control dark-input">
+              <option value="Naming Ceremony">Naming Ceremony</option>
+              <option value="Wedding">Wedding</option>
+              <option value="Birthday">Birthday</option>
+              <option value="Corporate Milestone">Corporate Milestone</option>
+              <option value="Anniversary">Anniversary</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="profile-hosts-input">Host Names</label>
+            <input type="text" name="hostNames" id="profile-hosts-input" class="form-control dark-input" placeholder="e.g., Priya & Rahul Sharma">
+          </div>
+          <div class="form-group flex-1">
+            <label for="profile-date-input">Event Date</label>
+            <input type="date" name="date" id="profile-date-input" class="form-control dark-input" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="profile-venue-input">Primary Venue</label>
+            <input type="text" name="venue" id="profile-venue-input" class="form-control dark-input" placeholder="e.g., Marhaba Mini Function Hall">
+          </div>
+          <div class="form-group flex-1">
+            <label for="profile-location-input">City / Region</label>
+            <input type="text" name="location" id="profile-location-input" class="form-control dark-input" placeholder="e.g., Chennai">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="profile-theme-input">Aesthetic Theme</label>
+            <select name="aestheticTheme" id="profile-theme-input" class="form-control dark-input">
+              <option value="South Indian Traditional">South Indian Traditional</option>
+              <option value="Royal Traditional Gold">Royal Traditional Gold</option>
+              <option value="Clay 3D">Clay 3D</option>
+              <option value="Pop Art">Pop Art</option>
+              <option value="Paper Cut">Paper Cut</option>
+              <option value="Mughal Elegance">Mughal Elegance</option>
+              <option value="Minimalist Gold">Minimalist Gold</option>
+              <option value="Pastel Watercolor">Pastel Watercolor</option>
+            </select>
+          </div>
+          <div class="form-group flex-1">
+            <label for="profile-guests-input">Target Headcount</label>
+            <input type="number" name="targetGuestCount" id="profile-guests-input" class="form-control dark-input" placeholder="150" min="1">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="profile-desc-input">Description / Notes</label>
+          <textarea name="description" id="profile-desc-input" class="form-control dark-input" rows="2" placeholder="Brief celebration description..."></textarea>
+        </div>
+
+        <div class="key-status-msg hidden" id="profile-status-msg"></div>
+
+        <div class="modal-footer-btns">
+          <button type="button" class="btn btn-outline" id="cancel-event-profile-btn" onclick="closeModal('event-profile-modal')">Cancel</button>
+          <button type="submit" class="btn btn-auth-submit" style="width: auto; padding: 0.65rem 1.4rem;">Save Profile</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

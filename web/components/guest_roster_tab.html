@@ -1,0 +1,115 @@
+<!-- Guest Roster Tab Component -->
+<div class="roster-header glass-card">
+  <div class="stat-counter">
+    <div class="stat-box">
+      <div class="stat-num" id="stat-total">0</div>
+      <div class="stat-lbl">Total Guests</div>
+    </div>
+    <div class="stat-box conf">
+      <div class="stat-num" id="stat-confirmed">0</div>
+      <div class="stat-lbl">Confirmed</div>
+    </div>
+    <div class="stat-box pend">
+      <div class="stat-num" id="stat-pending">0</div>
+      <div class="stat-lbl">Pending</div>
+    </div>
+    <div class="stat-box decl">
+      <div class="stat-num" id="stat-declined">0</div>
+      <div class="stat-lbl">Declined</div>
+    </div>
+  </div>
+
+  <div class="roster-actions">
+    <button class="btn btn-primary" id="open-add-guest-modal-btn">+ Full Guest Form</button>
+  </div>
+</div>
+
+<!-- Quick Add Guest Widget -->
+<div class="quick-add-guest-card glass-card mt-3">
+  <div class="widget-header">
+    <div class="widget-title-group">
+      <span class="widget-icon">⚡</span>
+      <span class="widget-title">Quick Add Guest Widget</span>
+    </div>
+    <span class="widget-sub">Fill details below for 1-click registration</span>
+  </div>
+  <form id="quick-guest-form" class="quick-guest-form" hx-post="/api/guests" hx-target="#guests-table-body" hx-swap="innerHTML" hx-on::after-request="this.reset()">
+    <div class="quick-form-grid-col">
+      <div class="form-group">
+        <label class="form-label-sm">Guest Full Name *</label>
+        <input type="text" name="name" id="quick-guest-name" class="form-control" placeholder="e.g. Rahul Sharma" required />
+      </div>
+      <div class="form-row-2col">
+        <div class="form-group">
+          <label class="form-label-sm">Category</label>
+          <select name="category" id="quick-guest-category" class="form-control">
+            <option value="Family">👨‍👩‍👧‍👦 Family</option>
+            <option value="Friends">🎉 Friends</option>
+            <option value="VIP">⭐ VIP</option>
+            <option value="Colleagues">💼 Colleagues</option>
+            <option value="Relative">🏠 Relative</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label-sm">RSVP Status</label>
+          <select name="rsvpStatus" id="quick-guest-status" class="form-control">
+            <option value="Confirmed">✅ Confirmed</option>
+            <option value="Pending" selected>⏳ Pending</option>
+            <option value="Declined">❌ Declined</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row-2col">
+        <div class="form-group">
+          <label class="form-label-sm">Plus-Ones</label>
+          <select name="plusOnes" id="quick-guest-plusones" class="form-control">
+            <option value="0">0 (Solo Guest)</option>
+            <option value="1">+1 Accompanying Guest</option>
+            <option value="2">+2 Accompanying Guests</option>
+            <option value="3">+3 Accompanying Guests</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label-sm">Dietary Preference</label>
+          <select name="dietary" id="quick-guest-diet" class="form-control">
+            <option value="No Restrictions">🥗 No Restrictions</option>
+            <option value="Vegetarian">🌱 Vegetarian</option>
+            <option value="Vegan">🥑 Vegan</option>
+            <option value="Jain">🌾 Jain</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group mt-2">
+        <button type="submit" class="btn-gold-lg">➕ Quick Add Guest to Roster</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<div class="table-card glass-card mt-4">
+  <div class="table-toolbar">
+    <input type="text" id="guest-search" placeholder="Search guests by name, phone, or notes..." class="form-control form-control-sm">
+    <select id="guest-status-filter" class="form-control form-control-sm">
+      <option value="all">All Statuses</option>
+      <option value="confirmed">Confirmed Only</option>
+      <option value="pending">Pending Only</option>
+      <option value="declined">Declined Only</option>
+    </select>
+  </div>
+
+  <table class="data-table" id="guests-table">
+    <thead>
+      <tr>
+        <th>Guest Name</th>
+        <th>Category / Email</th>
+        <th>RSVP Status</th>
+        <th>Party Size</th>
+        <th>Dietary Requirements</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="guests-table-body" hx-get="/api/guests" hx-trigger="load, guestListUpdated from:body" hx-swap="innerHTML">
+      <!-- Dynamically populated via Go HTML Template Partials -->
+    </tbody>
+  </table>
+</div>

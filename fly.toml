@@ -1,50 +1,41 @@
-app = "shubh-plan-open"
-primary_region = "sin"
+# fly.toml app configuration file generated for shubh-plan-demo on 2026-08-27T09:57:52+05:30
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'shubh-plan-demo'
+primary_region = 'sin'
 
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = 'Dockerfile'
 
 [env]
-  PORT = "3000"
-  SSH_PORT = "2222"
-  SERVER_MODE = "true"
-  MULTI_USER = "true"
-  DEMO_MODE = "true"
-  GEMINI_TEXT_MODEL = "gemini-3.5-flash"
-  GEMINI_FALLBACK_TEXT_MODEL = "gemini-2.5-flash"
-  GEMINI_IMAGE_MODEL = "gemini-3.1-flash-image"
-  GEMINI_FALLBACK_IMAGE_MODEL = "gemini-2.5-flash-image"
-  SHUBH_DATA_DIR = "/app/data"
-  SHUBH_OUTPUT_DIR = "/app/output"
+  APP_MODE = 'demo'
+  PORT = '8080'
+  SHUBH_DATA_DIR = '/app/data'
 
-[mounts]
-  source = "shubh_data"
-  destination = "/app/data"
+[[mounts]]
+  source = 'shubh_plan_web_data'
+  destination = '/app/data'
 
 [http_service]
-  internal_port = 3000
+  internal_port = 8080
   force_https = true
-  auto_stop_machines = "off"
+  auto_stop_machines = 'off'
   auto_start_machines = true
   min_machines_running = 1
-  processes = ["app"]
+  processes = ['app']
 
   [[http_service.checks]]
-    grace_period = "5s"
-    interval = "10s"
-    method = "GET"
-    path = "/"
-    timeout = "2s"
+    interval = '10s'
+    timeout = '5s'
+    grace_period = '15s'
+    initial_delay = '5s'
+    method = 'GET'
+    path = '/'
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "512mb"
-
-[[services]]
-  internal_port = 2222
-  protocol = "tcp"
-  auto_stop_machines = "off"
-  auto_start_machines = true
-
-  [[services.ports]]
-    port = 2222
+  size = 'shared-cpu-1x'
+  memory = '512mb'
+  cpus = 1
+  memory_mb = 512

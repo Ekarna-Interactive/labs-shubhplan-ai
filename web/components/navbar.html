@@ -1,0 +1,53 @@
+<!-- Top Navigation Bar Component -->
+<header class="navbar">
+  <div class="brand">
+    <div class="brand-logo">✨</div>
+    <div class="brand-text">
+      <h1 class="brand-title">Shubh Plan <span class="badge-web">WEB</span></h1>
+      <p class="brand-subtitle">AI-Native Event Operating System</p>
+    </div>
+  </div>
+
+  <div class="nav-metrics">
+    <div class="metric-pill mode-badge" id="app-mode-badge">
+      <span class="mode-dot"></span>
+      <span id="app-mode-text">DEMO MODE</span>
+    </div>
+    
+    <button type="button" class="metric-pill key-btn" id="open-apikey-modal-btn" onclick="openModal('apikey-modal')" title="Configure your Gemini API Key">
+      <span class="key-dot" id="key-status-dot"></span>
+      <span>🔑 API Key</span>
+    </button>
+
+    <div class="metric-pill" id="event-pill" hx-get="/api/event/pill" hx-trigger="load, eventUpdated from:body" hx-swap="outerHTML" onclick="openEventProfileModal()" title="Click to view Event Profile" style="cursor:pointer;">
+      <span class="dot active"></span>
+      <span id="header-event-name">Loading event...</span>
+    </div>
+
+    <div class="auth-menu-wrapper" style="position: relative;">
+      <button type="button" class="metric-pill auth-btn" id="auth-menu-btn">
+        <span class="auth-icon">👤</span>
+        <span id="auth-btn-text">Sign Up / Login</span>
+      </button>
+
+      <!-- User Info Dropdown Menu -->
+      <div class="user-dropdown-menu hidden" id="user-dropdown-menu">
+        <div class="dropdown-user-info">
+          <div class="dropdown-user-email" id="dropdown-user-email">user@example.com</div>
+          <div class="dropdown-user-role" id="dropdown-user-role">Role: Planner</div>
+        </div>
+        <div class="dropdown-divider"></div>
+        <button type="button" class="dropdown-item" id="menu-event-profile-btn" onclick="openEventProfileModal()">
+          <span>👤 Event Profile</span>
+        </button>
+        <button type="button" class="dropdown-item" id="menu-account-settings-btn" onclick="openAccountSettingsModal()">
+          <span>⚙️ Account Settings</span>
+        </button>
+        <div class="dropdown-divider"></div>
+        <button type="button" class="dropdown-item text-danger" id="menu-logout-btn" onclick="logoutUser()">
+          <span>🚪 Sign Out</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</header>

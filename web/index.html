@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="Shubh Plan Web — AI-Native B2B Event Management and Generative Invitation Operating System.">
+  <title>Shubh Plan Web — AI Event Management Platform</title>
+
+  <!-- Modern Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <link rel="stylesheet" href="/styles.css">
+</head>
+
+<body>
+  <div id="app" class="app-container">
+    <!-- Navbar Component -->
+    <header class="navbar">
+      <div class="brand">
+        <div class="brand-logo">✨</div>
+        <div class="brand-text">
+          <h2 style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+            Shubh Plan <span class="badge" style="background: var(--gradient-brand); color: white; padding: 2px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700;">WEB</span>
+          </h2>
+          <p class="tagline" style="font-size: 0.8rem; color: var(--text-muted);">AI-Native Event Operating System</p>
+        </div>
+      </div>
+
+      <div class="nav-actions" style="display: flex; align-items: center; gap: 12px;">
+        <div class="status-indicator-box" id="app-mode-badge" title="Active Operating Mode" style="display: flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.05); padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; border: 1px solid rgba(255, 255, 255, 0.08);">
+          <span class="status-indicator" id="app-mode-dot"></span>
+          <span id="app-mode-text" style="font-weight: 600;">DEMO MODE</span>
+        </div>
+
+        <button type="button" class="btn btn-sm btn-outline" id="open-apikey-modal-btn" title="Configure Gemini API Key">
+          <span class="dot" id="key-status-dot"></span>
+          <span>🔑 API Key</span>
+        </button>
+
+        <div class="event-pill" id="event-pill" title="Click to view event details" style="display: flex; align-items: center; gap: 8px; background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(139, 92, 246, 0.3); padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; color: #d8b4fe; cursor: pointer;">
+          <span class="event-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #06b6d4;"></span>
+          <span id="header-event-name" style="font-weight: 600;">Aarav's Naming Ceremony</span>
+        </div>
+
+        <div class="user-menu-wrapper" style="position: relative;">
+          <button type="button" class="btn btn-primary btn-sm" id="auth-menu-btn">
+            <span id="auth-btn-text">Sign Up / Login</span>
+          </button>
+          
+          <div class="user-dropdown-menu hidden" id="user-dropdown-menu" style="position: absolute; top: calc(100% + 8px); right: 0; background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 12px; min-width: 220px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); z-index: 1000;">
+            <div class="dropdown-header" style="margin-bottom: 8px;">
+              <div class="dropdown-email" id="dropdown-user-email" style="font-weight: 600; font-size: 0.9rem; color: #f8fafc;">user@shubhplan.ai</div>
+              <div class="dropdown-role" id="dropdown-user-role" style="font-size: 0.75rem; color: #94a3b8;">Role: PLANNER</div>
+            </div>
+            <hr style="border: none; border-top: 1px solid rgba(255, 255, 255, 0.08); margin: 8px 0;">
+            <button type="button" class="dropdown-item" id="menu-event-profile-btn" style="width: 100%; text-align: left; background: none; border: none; color: #f8fafc; padding: 6px 8px; font-size: 0.85rem; cursor: pointer; border-radius: 6px;">
+              <span>📅 Event Profile</span>
+            </button>
+            <button type="button" class="dropdown-item" id="menu-account-settings-btn" style="width: 100%; text-align: left; background: none; border: none; color: #f8fafc; padding: 6px 8px; font-size: 0.85rem; cursor: pointer; border-radius: 6px;">
+              <span>⚙️ Account Settings</span>
+            </button>
+            <hr style="border: none; border-top: 1px solid rgba(255, 255, 255, 0.08); margin: 8px 0;">
+            <button type="button" class="dropdown-item text-danger" id="menu-logout-btn" style="width: 100%; text-align: left; background: none; border: none; color: #f87171; padding: 6px 8px; font-size: 0.85rem; cursor: pointer; border-radius: 6px;">
+              <span>🚪 Sign Out</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Navigation Tabs -->
+    <nav class="tab-bar">
+      <button class="tab-btn active" data-tab="tab-copilot" id="tab-btn-copilot">
+        <span class="tab-icon">💬</span>
+        <span>AI Assistant</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-studio" id="tab-btn-studio">
+        <span class="tab-icon">🎨</span>
+        <span>Invitation Studio</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-roster" id="tab-btn-roster">
+        <span class="tab-icon">👥</span>
+        <span>Guest Roster & RSVPs</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-itinerary" id="tab-btn-itinerary">
+        <span class="tab-icon">📅</span>
+        <span>Itinerary & Logistics</span>
+      </button>
+    </nav>
+
+    <!-- Content Views -->
+    <main class="content-area">
+      <!-- 1. AI COPILOT TAB -->
+      <section id="tab-copilot" class="tab-pane active">
+        <div class="copilot-layout">
+          <!-- Chat Interface -->
+          <div class="chat-container glass-card">
+            <div class="chat-header">
+              <div class="agent-avatar">🤖</div>
+              <div class="agent-info">
+                <h3>Shubh Plan Copilot</h3>
+                <p>Powered by Gemini AI Engine</p>
+              </div>
+              <button type="button" class="btn btn-outline btn-sm" id="clear-chat-btn" style="margin-left: auto;">Clear Chat</button>
+            </div>
+
+            <div class="chat-messages" id="chat-messages">
+              <div class="message message-system">
+                <div class="msg-bubble">
+                  Namaste! I am your AI Event Assistant. Ask me to update your event profile, invite guests, schedule itinerary sessions, or generate bespoke invitation concepts!
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Action Chips -->
+            <div class="quick-prompts">
+              <button type="button" class="prompt-chip" data-command="/summarize">📊 Summarize Event</button>
+              <button type="button" class="prompt-chip" data-command="/add-guests">➕ Add Guests</button>
+              <button type="button" class="prompt-chip" data-command="/schedule">📅 Schedule Session</button>
+              <button type="button" class="prompt-chip" data-command="/generate-invitation">🎨 Generate Invitation</button>
+            </div>
+
+            <form id="chat-form" class="chat-input-form" style="position: relative;">
+              <!-- Floating Slash Commands Autocomplete Menu -->
+              <div id="slash-commands-menu" class="slash-commands-menu hidden">
+                <div class="slash-command-item" data-cmd="/summarize">
+                  <div class="slash-cmd-left">
+                    <span class="slash-cmd-icon">📊</span>
+                    <span class="slash-cmd-name">/summarize</span>
+                  </div>
+                  <span class="slash-cmd-desc">Summarize event overview & RSVP stats</span>
+                </div>
+                <div class="slash-command-item" data-cmd="/add-guests">
+                  <div class="slash-cmd-left">
+                    <span class="slash-cmd-icon">➕</span>
+                    <span class="slash-cmd-name">/add-guests</span>
+                  </div>
+                  <span class="slash-cmd-desc">Add guests to your event roster</span>
+                </div>
+                <div class="slash-command-item" data-cmd="/schedule">
+                  <div class="slash-cmd-left">
+                    <span class="slash-cmd-icon">📅</span>
+                    <span class="slash-cmd-name">/schedule</span>
+                  </div>
+                  <span class="slash-cmd-desc">Schedule a new itinerary session</span>
+                </div>
+                <div class="slash-command-item" data-cmd="/generate-invitation">
+                  <div class="slash-cmd-left">
+                    <span class="slash-cmd-icon">🎨</span>
+                    <span class="slash-cmd-name">/generate-invitation</span>
+                  </div>
+                  <span class="slash-cmd-desc">Create bespoke invitation card artwork</span>
+                </div>
+              </div>
+
+              <input type="text" id="chat-input" placeholder="Type instructions or '/' for quick actions..." autocomplete="off" required>
+              <button type="submit" class="btn btn-accent" id="chat-send-btn">
+                <span>Send</span>
+                <span>➔</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- Side Panel: Event Overview & Venue -->
+          <div class="side-panel" style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <div class="glass-card">
+              <h3 style="font-family: var(--font-display); font-size: 1.05rem; margin-bottom: 1rem;">Event Overview</h3>
+              <div class="profile-card" id="event-profile-overview">
+                <div class="profile-field">
+                  <span class="label">Event Title:</span>
+                  <span class="val" id="summary-title">-</span>
+                </div>
+                <div class="profile-field">
+                  <span class="label">Event Type:</span>
+                  <span class="val" id="summary-type">-</span>
+                </div>
+                <div class="profile-field">
+                  <span class="label">Date & Time:</span>
+                  <span class="val" id="summary-date">-</span>
+                </div>
+                <div class="profile-field">
+                  <span class="label">Hosts:</span>
+                  <span class="val" id="summary-hosts">-</span>
+                </div>
+                <div class="profile-field">
+                  <span class="label">Aesthetic Theme:</span>
+                  <span class="val badge-theme" id="summary-theme">-</span>
+                </div>
+                <div class="profile-field">
+                  <span class="label">Target Guests:</span>
+                  <span class="val" id="summary-count">-</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="glass-card">
+              <h3 style="font-family: var(--font-display); font-size: 1.05rem; margin-bottom: 1rem;">Verified Venue Showcase</h3>
+              <div class="venue-showcase" id="venue-showcase">
+                <img src="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=800&q=80" alt="Venue Showcase" id="venue-photo-img" class="venue-img" style="width: 100%; height: 180px; object-fit: cover; border-radius: 12px; margin-bottom: 12px;">
+                <div class="venue-details">
+                  <h4 id="venue-name-display" style="font-weight: 700; color: #D4AF37; margin-bottom: 4px; font-size: 1rem;">Marhaba Mini Function Hall</h4>
+                  <p id="venue-address-display" style="font-size: 0.82rem; color: #a0aec0; margin-bottom: 12px; line-height: 1.4;">60/2, 2nd St, Sarvamangala Colony, Aruna Colony, Vadapalani, Chennai</p>
+                  <div class="venue-actions" style="display: flex; gap: 8px;">
+                    <a href="https://maps.google.com" target="_blank" rel="noopener" class="btn btn-sm btn-outline" id="venue-maps-link">📍 View on Google Maps</a>
+                    <a href="https://maps.google.com" target="_blank" rel="noopener" class="btn btn-sm btn-primary" id="venue-directions-link">🧭 Get Directions</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. INVITATION STUDIO TAB -->
+      <section id="tab-studio" class="tab-pane">
+        <div class="studio-layout">
+          <!-- Left Side: Configuration -->
+          <div class="studio-form-card glass-card">
+            <div class="studio-header">
+              <h2>AI Invitation Studio</h2>
+              <p class="subtitle">Design bespoke, print-ready PNG invitation artwork tailored to your celebration.</p>
+            </div>
+
+            <form id="design-form">
+              <!-- 1. Aspect Ratio Selector -->
+              <div class="form-group">
+                <label class="form-label-bold">1. Select Aspect Ratio</label>
+                <div class="aspect-ratio-grid" id="aspect-ratio-selector">
+                  <div class="aspect-option active" data-ratio="9:16">
+                    <div class="ratio-box ratio-9-16"></div>
+                    <span class="ratio-label">9:16</span>
+                    <span class="ratio-sub">Story / Mobile</span>
+                  </div>
+                  <div class="aspect-option" data-ratio="4:5">
+                    <div class="ratio-box ratio-4-5"></div>
+                    <span class="ratio-label">4:5</span>
+                    <span class="ratio-sub">Portrait / Feed</span>
+                  </div>
+                  <div class="aspect-option" data-ratio="1:1">
+                    <div class="ratio-box ratio-1-1"></div>
+                    <span class="ratio-label">1:1</span>
+                    <span class="ratio-sub">Square / Post</span>
+                  </div>
+                  <div class="aspect-option" data-ratio="16:9">
+                    <div class="ratio-box ratio-16-9"></div>
+                    <span class="ratio-label">16:9</span>
+                    <span class="ratio-sub">Banner / Landscape</span>
+                  </div>
+                </div>
+                <input type="hidden" id="aspect-ratio-input" value="9:16">
+              </div>
+
+              <!-- 2. Design Style Preset -->
+              <div class="form-group">
+                <label for="aesthetic-theme-input" class="form-label-bold">2. Design Style Preset</label>
+                <select id="aesthetic-theme-input" class="form-control">
+                  <option value="South Indian">1. South Indian (Kolam art, banana leaf motifs, marigold garlands & temple gold)</option>
+                  <option value="Paper Cut">2. Paper Cut (Intricate 3D layered papercraft & delicate filigree)</option>
+                  <option value="Clay 3D" selected>3. Clay 3D (Charming claymation 3D characters & vibrant sculpted depth)</option>
+                  <option value="Pop Art">4. Pop Art (Bold graphic comic lines & retro pop halftone colors)</option>
+                  <option value="Mughal">5. Mughal (Royal jali lattice arches, emerald & gold floral vines)</option>
+                  <option value="Minimalist Gold">6. Minimalist Gold (Obsidian dark background & sleek gold foil line art)</option>
+                  <option value="Watercolor">7. Watercolor (Soft hand-painted pastel washes & artistic botanical flora)</option>
+                </select>
+              </div>
+
+              <!-- 3. Custom Elements -->
+              <div class="form-group">
+                <label class="form-label-bold">3. Custom Visual Elements to Include</label>
+                <div class="chips-container" id="custom-elements-chips">
+                  <button type="button" class="chip chip-selected" data-value="Elephant Motif">🐘 Elephant Motif</button>
+                  <button type="button" class="chip chip-selected" data-value="Marigold Garlands">🌿 Marigold Garlands</button>
+                  <button type="button" class="chip" data-value="Peacock Feathers">🪶 Peacock Feathers</button>
+                  <button type="button" class="chip" data-value="Lotus Blooms">🌸 Lotus Blooms</button>
+                  <button type="button" class="chip" data-value="Diwali Lamps">🪔 Diwali Lamps</button>
+                  <button type="button" class="chip" data-value="Kolam Patterns">🦚 Kolam Patterns</button>
+                  <button type="button" class="chip" data-value="Royal Lattice Jali">👑 Royal Lattice Jali</button>
+                  <button type="button" class="chip" data-value="Gold Foil Border">✨ Gold Foil Border</button>
+                  <button type="button" class="chip" data-value="Sculpted Cradle">👶 Sculpted Cradle</button>
+                  <button type="button" class="chip" data-value="Flute">🪈 Flute</button>
+                </div>
+                <div class="add-tag-row" style="margin-top: 8px;">
+                  <input type="text" id="new-custom-element-input" class="form-control form-control-sm" placeholder="Add custom element (e.g. Traditional Shehnai)...">
+                  <button type="button" class="btn btn-sm btn-outline" id="add-custom-element-btn">+ Add Element</button>
+                </div>
+              </div>
+
+              <!-- 4. Typography & Color Accents -->
+              <div class="form-row">
+                <div class="form-group col">
+                  <label for="typography-preset" class="form-label-bold">4. Typography Pair</label>
+                  <select id="typography-preset" class="form-control mb-2">
+                    <option value="Cinzel Decorative & Outfit" selected>Cinzel Decorative & Outfit (Royal & Modern)</option>
+                    <option value="Playfair Display & Montserrat">Playfair Display & Montserrat (Editorial)</option>
+                    <option value="Great Vibes & Inter">Great Vibes & Inter (Script Calligraphy)</option>
+                    <option value="Rozha One & Noto Sans">Rozha One & Noto Sans (Traditional Heritage)</option>
+                  </select>
+                  <input type="text" id="typography-input" value="Cinzel Decorative & Outfit" class="form-control" placeholder="Enter font pair...">
+                </div>
+                <div class="form-group col">
+                  <label for="primary-color-input" class="form-label-bold">Primary Accent Color</label>
+                  <div class="color-picker-wrapper">
+                    <input type="color" id="primary-color-input" value="#D4AF37" class="form-control-color">
+                    <div class="color-swatches">
+                      <button type="button" class="swatch" style="background:#D4AF37" data-color="#D4AF37" title="Gold"></button>
+                      <button type="button" class="swatch" style="background:#E07A5F" data-color="#E07A5F" title="Terracotta"></button>
+                      <button type="button" class="swatch" style="background:#059669" data-color="#059669" title="Emerald"></button>
+                      <button type="button" class="swatch" style="background:#2563EB" data-color="#2563EB" title="Royal Blue"></button>
+                      <button type="button" class="swatch" style="background:#DB2777" data-color="#DB2777" title="Ruby Pink"></button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 5. Custom Notes -->
+              <div class="form-group">
+                <label for="special-instructions-input" class="form-label-bold">5. Custom Instructions / Visual Notes</label>
+                <textarea id="special-instructions-input" rows="2" class="form-control" placeholder="E.g. Soft ambient background lighting, 3D sculpted textures..."></textarea>
+              </div>
+
+              <button type="submit" class="btn btn-accent btn-block" id="generate-suggestions-btn">
+                <span>✨ Step 1: Generate AI Prompt Suggestions</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- Right Side: Suggestions & Concepts Gallery -->
+          <div class="studio-preview-card glass-card">
+            <div class="suggestions-section" id="suggestions-section">
+              <div class="section-header">
+                <h3>Step 2: Choose an AI Prompt Suggestion</h3>
+                <span class="badge badge-accent">AI Synthesizer</span>
+              </div>
+              <p class="section-desc">Review prompt concepts generated by the agent based on your parameters. Customize any prompt text before generating card artwork.</p>
+              
+              <div class="prompt-suggestions-grid" id="prompt-suggestions-grid">
+                <div class="empty-suggestions-box">
+                  <span class="empty-icon">💡</span>
+                  <p>Select your aspect ratio, style preset, and elements on the left, then click <strong>"✨ Generate AI Prompt Suggestions"</strong> to synthesize prompt options.</p>
+                </div>
+              </div>
+            </div>
+
+            <hr class="section-divider">
+
+            <div class="gallery-section">
+              <div class="section-header">
+                <h3>Generated Invitation Concepts</h3>
+                <span class="badge badge-outline" id="designs-count-badge">0 Concepts</span>
+              </div>
+              
+              <div class="design-grid" id="design-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                <!-- Populated dynamically via JS -->
+              </div>
+
+              <div class="view-more-wrapper hidden" id="view-more-wrapper" style="text-align: center; margin-top: 24px; width: 100%;">
+                <button type="button" class="btn btn-secondary" id="view-more-designs-btn" style="background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; padding: 8px 28px; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.88rem;">
+                  <span id="view-more-btn-text">👁️ View All Designs</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. GUEST ROSTER TAB -->
+      <section id="tab-roster" class="tab-pane">
+        <div class="glass-card">
+          <div style="margin-bottom: 1.5rem;">
+            <h2 style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; margin-bottom: 4px;">Guest Roster & RSVPs</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Manage invitees, track real-time RSVP confirmations, dietary needs, and plus-ones.</p>
+          </div>
+
+          <!-- Stat Counter Cards -->
+          <div class="stat-counter" style="margin-bottom: 1.5rem;">
+            <div class="stat-box">
+              <div class="stat-num" id="stat-total">0</div>
+              <div class="stat-lbl">Total Invited</div>
+            </div>
+            <div class="stat-box conf">
+              <div class="stat-num" id="stat-confirmed">0</div>
+              <div class="stat-lbl">Confirmed</div>
+            </div>
+            <div class="stat-box pend">
+              <div class="stat-num" id="stat-pending">0</div>
+              <div class="stat-lbl">Pending</div>
+            </div>
+            <div class="stat-box decl">
+              <div class="stat-num" id="stat-declined">0</div>
+              <div class="stat-lbl">Declined</div>
+            </div>
+          </div>
+
+          <!-- Toolbar & Search -->
+          <div class="table-toolbar" style="margin-bottom: 1rem;">
+            <input type="text" id="guest-search" class="form-control form-control-sm" placeholder="🔍 Search guest name, category, phone, dietary..." style="flex: 1;">
+            <select id="guest-status-filter" class="form-control form-control-sm" style="width: 220px;">
+              <option value="all">All RSVP Statuses</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="pending">Pending</option>
+              <option value="declined">Declined</option>
+            </select>
+          </div>
+
+          <!-- Quick Add Form -->
+          <form id="quick-guest-form" style="display: flex; gap: 8px; margin-bottom: 1.5rem; flex-wrap: wrap;">
+            <input type="text" id="quick-guest-name" class="form-control form-control-sm" placeholder="Guest Full Name..." style="flex: 2; min-width: 160px;" required>
+            <select id="quick-guest-category" class="form-control form-control-sm" style="flex: 1; min-width: 110px;">
+              <option value="Family">Family</option>
+              <option value="VIP">VIP</option>
+              <option value="Friend">Friend</option>
+              <option value="Corporate">Corporate</option>
+            </select>
+            <select id="quick-guest-status" class="form-control form-control-sm" style="flex: 1; min-width: 110px;">
+              <option value="Pending">Pending</option>
+              <option value="Confirmed">Confirmed</option>
+              <option value="Declined">Declined</option>
+            </select>
+            <input type="number" id="quick-guest-plusones" class="form-control form-control-sm" placeholder="Plus Ones" min="0" value="0" style="width: 90px;">
+            <input type="text" id="quick-guest-diet" class="form-control form-control-sm" placeholder="Dietary Needs" style="flex: 1.5; min-width: 130px;">
+            <button type="submit" class="btn btn-sm btn-accent">+ Add Guest</button>
+          </form>
+
+          <!-- Data Table -->
+          <div style="overflow-x: auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Guest Name</th>
+                  <th>Category</th>
+                  <th>RSVP Status</th>
+                  <th>Plus Ones</th>
+                  <th>Dietary Restrictions</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="guests-table-body">
+                <!-- Dynamically populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. ITINERARY TAB -->
+      <section id="tab-itinerary" class="tab-pane">
+        <div class="itinerary-layout">
+          <div class="glass-card">
+            <div class="card-header" style="margin-bottom: 1rem;">
+              <h2 style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; margin-bottom: 4px;">Schedule & Logistics Timeline</h2>
+              <p style="color: var(--text-muted); font-size: 0.9rem;">Chronological event agenda, sub-venues, and logistics schedule.</p>
+            </div>
+            <div id="itinerary-timeline" class="timeline-container">
+              <!-- Dynamically populated via JS -->
+            </div>
+          </div>
+
+          <div class="glass-card">
+            <h3 style="font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 1rem;">+ Add Session Item</h3>
+            <form id="add-session-form">
+              <div class="form-group">
+                <label for="session-time" class="form-label-bold">Session Time</label>
+                <input type="text" id="session-time" class="form-control" placeholder="E.g. 6:30 PM" required>
+              </div>
+              <div class="form-group">
+                <label for="session-title" class="form-label-bold">Session Title</label>
+                <input type="text" id="session-title" class="form-control" placeholder="E.g. Welcome Drinks & Nadhaswaram" required>
+              </div>
+              <div class="form-group">
+                <label for="session-location" class="form-label-bold">Location / Sub-venue</label>
+                <input type="text" id="session-location" class="form-control" placeholder="E.g. Main Courtyard">
+              </div>
+              <div class="form-group">
+                <label for="session-desc" class="form-label-bold">Description / Notes</label>
+                <textarea id="session-desc" rows="3" class="form-control" placeholder="E.g. Traditional music performance accompanied by mocktails..."></textarea>
+              </div>
+              <button type="submit" class="btn btn-accent btn-block">+ Add to Itinerary</button>
+            </form>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Modals -->
+    <!-- Auth Modal -->
+    <div class="modal-backdrop" id="auth-modal">
+      <div class="modal-card glass-card">
+        <button type="button" class="modal-close" id="close-auth-modal-btn">&times;</button>
+        <div class="modal-header" style="display:flex; flex-direction:column; align-items:center; text-align:center; margin-bottom:1.5rem;">
+          <div class="auth-logo" style="font-size:2.2rem; margin-bottom:6px;">✨</div>
+          <h2 style="font-family:var(--font-display); font-size:1.5rem; font-weight:700; color:#fff; margin-bottom:4px;">Welcome to Shubh Plan</h2>
+          <p class="subtitle" style="font-size:0.85rem; color:var(--text-muted);">Sign in to your event workspace or try the 1-Click Guest Demo.</p>
+        </div>
+
+        <div class="auth-tabs">
+          <button type="button" class="auth-tab-btn active" id="tab-login-btn">Sign In</button>
+          <button type="button" class="auth-tab-btn" id="tab-signup-btn">Create Account</button>
+        </div>
+
+        <div class="auth-forms">
+          <!-- Login Form -->
+          <form id="login-form">
+            <div class="error-msg hidden" id="login-error"></div>
+            <div class="form-group">
+              <label for="login-email" class="form-label-bold">Email Address</label>
+              <input type="email" id="login-email" class="form-control" placeholder="user@shubhplan.ai" required>
+            </div>
+            <div class="form-group">
+              <label for="login-password" class="form-label-bold">Password</label>
+              <input type="password" id="login-password" class="form-control" placeholder="••••••••" required>
+            </div>
+            <div class="auth-actions">
+              <button type="button" class="btn btn-secondary btn-sm" id="fill-demo-credentials-btn">⚡ Auto-Fill Credentials</button>
+              <button type="submit" class="btn btn-accent">Sign In</button>
+            </div>
+          </form>
+
+          <!-- Signup Form -->
+          <form id="signup-form" style="display: none;">
+            <div class="error-msg hidden" id="signup-error"></div>
+            <div class="form-group">
+              <label for="signup-name" class="form-label-bold">Full Name</label>
+              <input type="text" id="signup-name" class="form-control" placeholder="Vikram Sharma" required>
+            </div>
+            <div class="form-group">
+              <label for="signup-email" class="form-label-bold">Email Address</label>
+              <input type="email" id="signup-email" class="form-control" placeholder="vikram@shubhplan.ai" required>
+            </div>
+            <div class="form-group">
+              <label for="signup-password" class="form-label-bold">Password</label>
+              <input type="password" id="signup-password" class="form-control" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn btn-accent btn-block">Create Account</button>
+          </form>
+        </div>
+
+        <hr class="modal-divider">
+        <button type="button" class="btn btn-secondary btn-block" id="guest-demo-btn">
+          <span>⚡ Enter as Demo Guest (Instant Access)</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- API Key Modal -->
+    <div class="modal-backdrop" id="apikey-modal">
+      <div class="modal-card glass-card" style="max-width: 500px;">
+        <button type="button" class="modal-close" id="close-apikey-modal-btn">&times;</button>
+        <div class="modal-header">
+          <h2>🔑 API Key Configuration</h2>
+          <p class="subtitle">Enter your Gemini & Google Maps Places API keys to enable live AI features and location verification in Demo mode.</p>
+        </div>
+        <form id="apikey-form" style="margin-top: 1rem;">
+          <div id="key-status-msg" class="key-status-msg hidden"></div>
+          <div class="form-group" style="margin-bottom: 1.25rem;">
+            <label for="user-gemini-key-input" class="form-label-bold">Gemini API Key</label>
+            <input type="password" id="user-gemini-key-input" class="form-control" placeholder="AIzaSy..." autocomplete="off">
+            <span class="help-text" style="font-size: 0.8rem; color: #a0aec0; margin-top: 4px; display: block;">Used for Gemini AI Copilot & Imagen 3 Invitation design generation.</span>
+          </div>
+          <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label for="user-maps-key-input" class="form-label-bold">Google Maps Places API Key (Optional)</label>
+            <input type="password" id="user-maps-key-input" class="form-control" placeholder="AIzaSy..." autocomplete="off">
+            <span class="help-text" style="font-size: 0.8rem; color: #a0aec0; margin-top: 4px; display: block;">Used for real-time Google Places venue address lookup & photo showcase.</span>
+          </div>
+          <div class="modal-actions" style="display: flex; justify-content: space-between; gap: 10px;">
+            <button type="button" class="btn btn-ghost" id="clear-apikey-btn">Clear Saved Keys</button>
+            <button type="submit" class="btn btn-accent">Save Keys</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Event Profile Modal -->
+    <div class="modal-backdrop" id="event-profile-modal">
+      <div class="modal-card glass-card" style="max-width: 650px;">
+        <button type="button" class="modal-close" id="close-event-profile-modal-btn">&times;</button>
+        <div class="modal-header">
+          <h2>📅 Edit Event Profile</h2>
+          <p class="subtitle">Update core parameters for your celebration workspace.</p>
+        </div>
+        <form id="event-profile-form">
+          <div id="profile-status-msg" class="key-status-msg hidden"></div>
+          <div class="form-row">
+            <div class="form-group col">
+              <label for="profile-title-input" class="form-label-bold">Event Title</label>
+              <input type="text" id="profile-title-input" class="form-control" required>
+            </div>
+            <div class="form-group col">
+              <label for="profile-type-input" class="form-label-bold">Event Type</label>
+              <input type="text" id="profile-type-input" class="form-control" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group col">
+              <label for="profile-hosts-input" class="form-label-bold">Host Names</label>
+              <input type="text" id="profile-hosts-input" class="form-control">
+            </div>
+            <div class="form-group col">
+              <label for="profile-date-input" class="form-label-bold">Event Date</label>
+              <input type="date" id="profile-date-input" class="form-control" style="color-scheme: dark;">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group col">
+              <label for="profile-venue-input" class="form-label-bold">Venue Name</label>
+              <input type="text" id="profile-venue-input" class="form-control">
+            </div>
+            <div class="form-group col">
+              <label for="profile-location-input" class="form-label-bold">City / Location</label>
+              <input type="text" id="profile-location-input" class="form-control">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group col">
+              <label for="profile-theme-input" class="form-label-bold">Aesthetic Theme</label>
+              <input type="text" id="profile-theme-input" class="form-control">
+            </div>
+            <div class="form-group col">
+              <label for="profile-guests-input" class="form-label-bold">Target Guest Count</label>
+              <input type="number" id="profile-guests-input" class="form-control" min="1">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="profile-desc-input" class="form-label-bold">Description / Notes</label>
+            <textarea id="profile-desc-input" rows="2" class="form-control"></textarea>
+          </div>
+          <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px;">
+            <button type="button" class="btn btn-secondary" id="cancel-event-profile-btn">Cancel</button>
+            <button type="submit" class="btn btn-accent">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Account Settings Modal -->
+    <div class="modal-backdrop" id="account-settings-modal">
+      <div class="modal-card glass-card">
+        <button type="button" class="modal-close" id="close-account-settings-modal-btn">&times;</button>
+        <div class="modal-header">
+          <h2>⚙️ Account Settings</h2>
+          <p class="subtitle">Manage user account details and API credentials.</p>
+        </div>
+        <div class="settings-details" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+          <div class="setting-item" style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 8px;">
+            <span style="color: #a0aec0;">User ID:</span>
+            <span id="setting-user-id" style="font-weight: 600;">-</span>
+          </div>
+          <div class="setting-item" style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 8px;">
+            <span style="color: #a0aec0;">Email Address:</span>
+            <span id="setting-user-email" style="font-weight: 600;">-</span>
+          </div>
+          <div class="setting-item" style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 8px;">
+            <span style="color: #a0aec0;">Role:</span>
+            <span id="setting-user-role" style="font-weight: 600;">-</span>
+          </div>
+          <div class="setting-item" style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 8px;">
+            <span style="color: #a0aec0;">Gemini API Key:</span>
+            <span id="setting-key-status" style="font-weight: 600;">-</span>
+          </div>
+        </div>
+        <div class="modal-actions" style="display: flex; justify-content: space-between; gap: 10px;">
+          <button type="button" class="btn btn-secondary btn-sm" id="settings-open-apikey-btn">🔑 Configure API Key</button>
+          <button type="button" class="btn btn-danger btn-sm" id="delete-account-btn">🗑️ Delete Account & Data</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Full-Screen Card Preview Modal -->
+    <div class="modal-backdrop" id="preview-card-modal">
+      <div class="modal-card glass-card" style="max-width: 620px; text-align: center; position: relative;">
+        <button type="button" class="modal-close" id="close-preview-card-modal-btn">&times;</button>
+        <div class="modal-header" style="margin-bottom: 1rem; display: block;">
+          <h2 id="preview-modal-title" style="font-size: 1.3rem; color: #D4AF37; font-family: var(--font-display);">Invitation Artwork Preview</h2>
+        </div>
+        <div class="preview-img-container" style="max-height: 520px; overflow: hidden; border-radius: 12px; border: 1px solid rgba(212,175,55,0.4); margin-bottom: 1.25rem; box-shadow: 0 10px 30px rgba(0,0,0,0.6);">
+          <img src="" alt="Invitation Preview" id="preview-modal-img" style="width: 100%; height: auto; max-height: 500px; object-fit: contain; display: block; margin: 0 auto;">
+        </div>
+        <div class="modal-actions" style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+          <span class="badge badge-accent" id="preview-modal-theme" style="padding: 6px 14px; font-size: 0.85rem;">Clay 3D</span>
+          <a href="#" download="invitation_card.png" class="btn btn-accent btn-sm" id="preview-modal-download-btn" style="text-decoration: none;">⬇️ Download High-Res PNG</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/widgets.js"></script>
+  <script src="/app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,2 @@
+# Shubh Plan Web Generated Assets Directory
+This file ensures Go embed handles the web/assets directory cleanly when no assets have been generated yet.

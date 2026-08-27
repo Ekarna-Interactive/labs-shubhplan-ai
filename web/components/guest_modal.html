@@ -1,0 +1,56 @@
+<!-- Add Guest Modal Component -->
+<div class="modal-backdrop" id="add-guest-modal">
+  <div class="modal-card glass-card">
+    <div class="modal-header">
+      <h3>Add New Event Guest</h3>
+      <button class="modal-close" id="close-guest-modal-btn">&times;</button>
+    </div>
+    <form id="modal-add-guest-form">
+      <div class="form-group">
+        <label for="modal-guest-name">Guest Full Name *</label>
+        <input type="text" id="modal-guest-name" class="form-control" required>
+      </div>
+      <div class="form-row">
+        <div class="form-group col">
+          <label for="modal-guest-category">Category</label>
+          <select id="modal-guest-category" class="form-control">
+            <option value="VIP">VIP</option>
+            <option value="Family">Family</option>
+            <option value="Friend">Friend</option>
+            <option value="Corporate">Corporate</option>
+          </select>
+        </div>
+        <div class="form-group col">
+          <label for="modal-guest-status">RSVP Status</label>
+          <select id="modal-guest-status" class="form-control">
+            <option value="Confirmed">Confirmed</option>
+            <option value="Pending" selected>Pending</option>
+            <option value="Declined">Declined</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group col">
+          <label for="modal-guest-diet">Dietary Requirements</label>
+          <input type="text" id="modal-guest-diet" placeholder="E.g. Vegetarian" class="form-control">
+        </div>
+        <div class="form-group col">
+          <label for="modal-guest-plusones">Plus-Ones</label>
+          <input type="number" id="modal-guest-plusones" value="0" min="0" max="10" class="form-control">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="modal-guest-phone">Phone Number</label>
+        <input type="tel" id="modal-guest-phone" placeholder="+91 98765 43210" class="form-control">
+      </div>
+      <div class="form-group">
+        <label for="modal-guest-notes">Special Notes</label>
+        <textarea id="modal-guest-notes" rows="2" class="form-control"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" id="cancel-guest-modal-btn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Guest</button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,46 @@
+<!-- Account Settings Modal Component -->
+<div class="modal-backdrop" id="account-settings-modal">
+  <div class="modal-card auth-modal-card" style="max-width: 480px;">
+    <div class="auth-modal-header">
+      <div class="auth-brand-badge">
+        <span class="auth-brand-logo">⚙️</span>
+        <div class="auth-brand-title">Account Settings</div>
+      </div>
+      <p class="auth-modal-subtitle">Manage user account profile & credentials</p>
+      <button type="button" class="close-btn" id="close-account-settings-modal-btn" onclick="closeModal('account-settings-modal')">&times;</button>
+    </div>
+    <div class="modal-body auth-modal-body">
+      <div class="account-details-box">
+        <div class="detail-row">
+          <span class="detail-label">User ID:</span>
+          <span class="detail-value font-mono" id="setting-user-id">-</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Email:</span>
+          <span class="detail-value" id="setting-user-email">-</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Account Role:</span>
+          <span class="detail-value" id="setting-user-role">-</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">API Key Status:</span>
+          <span class="detail-value" id="setting-key-status">Configured</span>
+        </div>
+      </div>
+
+      <button type="button" class="btn btn-outline btn-block" id="settings-open-apikey-btn" onclick="closeModal('account-settings-modal'); openModal('apikey-modal');" style="margin-bottom: 1.5rem;">
+        <span>🔑 Configure Gemini API Key</span>
+      </button>
+
+      <!-- Danger Zone -->
+      <div class="danger-zone-box">
+        <h4 class="danger-title">⚠️ Danger Zone</h4>
+        <p class="danger-desc">Deleting your account permanently removes your profile, session tokens, and access to this workspace.</p>
+        <button type="button" class="btn btn-danger-delete" id="delete-account-btn">
+          <span>🗑️ Delete Account & Data</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

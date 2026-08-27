@@ -1,0 +1,49 @@
+# flyctl launch added from .gitignore
+# Compiled binaries & build outputs
+**/main
+**/main.exe
+**/shubh-plan-web
+**/shubh-plan-web.exe
+**/*.exe
+**/*.exe~
+**/*.dll
+**/*.so
+**/*.dylib
+**/*.test
+**/*.out
+**/*.prof
+
+# Local Data and Session Stores
+**/data/*
+!**/data/.gitkeep
+**/output/*
+!**/output/.gitkeep
+**/*.log
+
+# Generated Card Assets (keep placeholder and fallbacks for Go embed)
+**/web/assets/*
+!**/web/assets/placeholder.txt
+!**/web/assets/card_fallback.png
+
+# Genkit CLI Local Trace & Runtime Cache
+**/.genkit
+**/.genkit
+
+# OS & Editor files
+**/.DS_Store
+**/Thumbs.db
+**/.vscode
+**/.idea
+**/*.swp
+
+# Internal Issue Tracking Documentation
+**/issues.md
+
+# Environment Configuration & Secrets
+**/.env
+**/.env.local
+**/.env.*.local
+**/*.pem
+**/*.key
+!**/.env.example
+fly.toml
