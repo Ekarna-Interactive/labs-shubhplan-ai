@@ -40,10 +40,9 @@ graph TD
     end
 
     subgraph CLOUD ["☁️ Google AI & Places Cloud"]
-        GEMINI["✨ Google Gemini LLM & Imagen API<br/><i>(gemini-2.5-flash / gemini-1.5-flash)</i>"]:::cloud
+        GEMINI["✨ Google Gemini LLM & Image API<br/><i>(gemini-flash-latest & gemini-3.1-flash-image)</i>"]:::cloud
         PLACES["📍 Google Places Search API<br/><i>(Verified Venues & Photos)</i>"]:::cloud
     end
-
     subgraph DATA ["📦 Unified Data Persistence (/app/data)"]
         USERDB["📄 Users & Sessions Store<br/><i>(users.json • Argon2id Hashes)</i>"]:::store
         STOREDB["📄 Event Domain Store<br/><i>(store.json • Events, Guests, Designs)</i>"]:::store
@@ -83,7 +82,7 @@ Open your browser and navigate to:
 ## ✨ Feature Capabilities
 
 ### 🔐 1. Dual Operating Modes & Bring Your Own Key (BYOK)
-- **Demo Mode (`APP_MODE=demo`)**: Tailored for public cloud deployments (e.g. Fly.io). Server-side API key is unconfigured by default. Users provide their own free Gemini API key in a top-bar settings modal (stored strictly in browser `localStorage` for privacy). Includes 1-click **Instant Guest Demo** with pre-populated sample event data.
+- **Demo Mode (`APP_MODE=demo`)**: Tailored for public cloud deployments (e.g. Fly.io). Server-side API key is unconfigured by default. Users provide their own free Gemini API key and optional Google Maps Places API key in a top-bar settings modal (stored strictly in browser `localStorage` for privacy). Includes 1-click **Instant Guest Demo** with pre-populated sample event data.
 - **Server Mode (`APP_MODE=server`)**: Designed for local or private server usage. Automatically loads system environment variables (`GEMINI_API_KEY`, `GOOGLE_MAPS_API_KEY`) from `.env` for zero-configuration team access.
 
 ### 👤 2. Native Argon2id Authentication
@@ -94,14 +93,14 @@ Open your browser and navigate to:
 - **Dynamic Aspect Ratios**: Design in `9:16` vertical poster, `4:5` portrait, `1:1` square, or `16:9` landscape.
 - **7 Signature Aesthetic Presets**: Choose from *South Indian*, *Paper Cut 3D*, *Clay 3D*, *Pop Art*, *Mughal*, *Minimalist Gold*, and *Watercolor*.
 - **Custom Visual Elements & Typography**: Select custom tags (*marigold garlands, kolam art, vintage peacock*) and typography pairings (*Cinzel Decorative & Outfit*, *Great Vibes*, *Playfair Display*).
-- **Gemini LLM Prompt Synthesizer**: Click **"✨ Step 1: Generate AI Prompt Suggestions"** to invoke Gemini LLM as an AI Art Director to synthesize 4 custom prompt concepts.
+- **Gemini LLM Prompt Synthesizer**: Click **"✨ Step 1: Generate AI Prompt Suggestions"** to invoke Gemini LLM (`gemini-flash-latest`) as an AI Art Director to synthesize 4 custom prompt concepts. Once generated artwork is rendered (`gemini-3.1-flash-image`), prompt suggestions automatically clear to keep the interface sleek and focused.
 - **High-Res PNG Card Rendering**: Renders full-resolution `.png` card artwork with 1-click download and clipboard prompt copying.
 
 ### 🤖 4. AI Event Assistant, Slash Commands & Component Widgets
 - **Conversational Setup & Real-Time SSE**: Real-time Server-Sent Events (SSE) chat for natural conversation setup (*"Plan a wedding for Maya & Vikram on Dec 20 at Hyatt Regency Mumbai"*) with real-time `⏳ Thinking...` loading states and glowing 3-dot typing animations.
 - **Interactive Quick Action Chips & Slash Commands (`/`)**: Trigger quick actions (`/summarize`, `/add-guests`, `/schedule`, `/generate-invitation`) via top chips or by typing `/` to open a floating backdrop-blur autocomplete menu with full keyboard (`Up`/`Down`/`Enter`/`Tab`) navigation.
 - **Modular In-Chat Component Widgets ([`web/widgets.js`](file:///c:/Users/Gokul/Documents/Programming/Antigravity/shubh-plan/apps/shubh-plan-web/web/widgets.js))**: Self-contained 1-click HTML form components embedded inside chat bubbles:
-  - **`AddGuestWidget`**: Category pills (`Family`, `Friends`, `VIPs`, `Colleagues`), RSVP pills, plus-ones counter, and guest name input.
+  - **`AddGuestWidget`**: Category pills (`Family`, `Friends`, `VIPs`, `Colleagues`), RSVP pills, plus-ones counter, **Dietary Preference Dropdown Selection** (`Vegetarian`, `Jain`, `Vegan`, `Halal`, `Eggetarian`, `Gluten-Free`, `No Preference`), and guest name input.
   - **`GenerateInvitationWidget`**: 2-step flow with style preset pills (`Clay 3D`, `South Indian`, `Paper Cut`, `Mughal`, etc.), aspect ratio pills (`4:5`, `9:16`, `1:1`, `16:9`), custom prompt input, 4 synthesized Gemini AI prompt option cards, and 1-click PNG artwork rendering.
   - **`ScheduleSessionWidget`**: Session title, time, and location inputs.
 - **Full-Screen Artwork Preview Modal**: Click any generated card image in chat or Invitation Studio to open high-res `#preview-card-modal` with direct PNG download options.
