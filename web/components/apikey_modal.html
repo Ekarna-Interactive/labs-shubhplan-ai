@@ -1,0 +1,37 @@
+<!-- API Key & Instructions Modal Component -->
+<div class="modal-backdrop" id="apikey-modal">
+  <div class="modal-card glass-card modal-md">
+    <div class="modal-header">
+      <h3>🔑 Gemini API Key Settings</h3>
+      <button type="button" class="close-btn" id="close-apikey-modal-btn" onclick="closeModal('apikey-modal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="apikey-info-box">
+        <h4>💡 Bring Your Own API Key (Demo Mode)</h4>
+        <p>To test Gemini AI card generation and event planning in Demo Mode, provide your free Gemini API key below. Your key is stored <strong>strictly in your browser memory</strong> and is never saved to the server database.</p>
+        
+        <div class="key-steps">
+          <ol>
+            <li>Visit <a href="https://aistudio.google.com/app/apikey" target="_blank" class="link-accent">Google AI Studio (aistudio.google.com) ↗</a></li>
+            <li>Click <strong>"Create API Key"</strong> (free tier available).</li>
+            <li>Paste your key below and click <strong>"Save to Browser"</strong>.</li>
+          </ol>
+        </div>
+      </div>
+
+      <form id="apikey-form" onsubmit="event.preventDefault(); saveApiKey();">
+        <div class="form-group">
+          <label for="user-gemini-key-input" class="form-label-bold">Gemini API Key</label>
+          <input type="password" id="user-gemini-key-input" class="form-control" placeholder="AIzaSy..." required autocomplete="off">
+        </div>
+        
+        <div class="key-status-msg hidden" id="key-status-msg"></div>
+
+        <div class="modal-footer-btns">
+          <button type="button" class="btn btn-outline" id="clear-apikey-btn" onclick="clearApiKey()">Clear Key</button>
+          <button type="submit" class="btn btn-accent" id="save-apikey-btn">Save to Browser</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

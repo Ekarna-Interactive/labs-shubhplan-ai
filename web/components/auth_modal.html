@@ -1,0 +1,65 @@
+<!-- User Auth Modal Component -->
+<div class="modal-backdrop" id="auth-modal">
+  <div class="modal-card auth-modal-card">
+    <div class="auth-modal-header">
+      <div class="auth-brand-badge">
+        <span class="auth-brand-logo">✨</span>
+        <div class="auth-brand-title">Shubh Plan <span class="badge-web">WEB</span></div>
+      </div>
+      <p class="auth-modal-subtitle">Sign in to manage events, guests & AI invitations</p>
+      <button type="button" class="close-btn hidden" id="close-auth-modal-btn" title="Close">&times;</button>
+    </div>
+    <div class="modal-body auth-modal-body">
+      <!-- Auth Tabs -->
+      <div class="auth-tab-bar">
+        <button type="button" class="auth-tab-btn active" id="tab-login-btn">Sign In</button>
+        <button type="button" class="auth-tab-btn" id="tab-signup-btn">Create Account</button>
+      </div>
+
+      <!-- Login Form -->
+      <form id="login-form" class="auth-form">
+        <div class="form-group">
+          <label for="login-email">Email Address</label>
+          <input type="email" id="login-email" class="form-control dark-input" placeholder="name@example.com" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" class="form-control dark-input" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+        <div class="auth-error-msg hidden" id="login-error"></div>
+        <button type="submit" class="btn btn-auth-submit">Sign In to Workspace</button>
+
+        <div class="demo-account-hint">
+          <span>💡 Showcase Demo: <strong>admin@shubhplan.ai</strong></span>
+          <button type="button" class="btn-fill-demo" id="fill-demo-credentials-btn">Auto-Fill</button>
+        </div>
+      </form>
+
+      <!-- Signup Form -->
+      <form id="signup-form" class="auth-form" style="display: none;">
+        <div class="form-group">
+          <label for="signup-name">Full Name</label>
+          <input type="text" id="signup-name" class="form-control dark-input" placeholder="Aarav Sharma" required autocomplete="name">
+        </div>
+        <div class="form-group">
+          <label for="signup-email">Email Address</label>
+          <input type="email" id="signup-email" class="form-control dark-input" placeholder="name@example.com" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="signup-password">Password</label>
+          <input type="password" id="signup-password" class="form-control dark-input" placeholder="At least 6 characters" required minlength="6" autocomplete="new-password">
+        </div>
+        <div class="auth-error-msg hidden" id="signup-error"></div>
+        <button type="submit" class="btn btn-auth-submit btn-accent-submit">Create Account</button>
+      </form>
+
+      <div class="auth-divider"><span>OR</span></div>
+
+      <!-- Instant Guest Demo Option -->
+      <button type="button" class="btn btn-guest-demo" id="guest-demo-btn">
+        <span class="demo-icon">🚀</span>
+        <span>Instant Guest Demo (Pre-populated Sample Event)</span>
+      </button>
+    </div>
+  </div>
+</div>

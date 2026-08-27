@@ -1,0 +1,59 @@
+<!-- AI Assistant Copilot Tab Component -->
+<div class="copilot-layout">
+  <div class="chat-container glass-card">
+    <div class="chat-header">
+      <div class="agent-avatar">🤖</div>
+      <div class="agent-info">
+        <h3>AI Event Assistant</h3>
+        <p>Your personal AI event manager for venue verification, luxury invitations, and guest logistics</p>
+      </div>
+      <button class="btn btn-sm btn-outline" id="clear-chat-btn">Clear Chat</button>
+    </div>
+
+    <div class="chat-messages" id="chat-messages">
+      <!-- Initial Welcome Message -->
+      <div class="message message-system">
+        <div class="msg-bubble">
+          Welcome to <strong>Shubh Plan Web</strong>! Tell me your celebration details (e.g., <em>"Plan a wedding for Maya & Vikram on Dec 20 at Hyatt Regency Mumbai"</em>) and I will configure your event workspace!
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Action Chips -->
+    <div class="quick-prompts">
+      <button class="prompt-chip" data-prompt="Give me a full summary of the event guests and RSVP counts">📊 Guest Roster Summary</button>
+      <button class="prompt-chip" data-prompt="What is scheduled on the event itinerary today?">📅 Check Schedule</button>
+      <button class="prompt-chip" data-prompt="Design a new Clay 3D invitation card for our event">🎨 Create Invitation</button>
+    </div>
+
+    <!-- Chat Input Bar -->
+    <form id="chat-form" class="chat-input-form">
+      <input type="text" id="chat-input" placeholder="Ask your AI Assistant (e.g. 'Search for Marhaba Mini Function Hall in Chennai')..." autocomplete="off" required>
+      <button type="submit" class="btn btn-primary" id="chat-send-btn">
+        <span>Send</span>
+        <span class="send-icon">➔</span>
+      </button>
+    </form>
+  </div>
+
+  <!-- Side Information Panel -->
+  <div class="side-panel glass-card">
+    <h3>Event Profile Overview</h3>
+    <div id="profile-summary-box" hx-get="/api/event/summary" hx-trigger="load, eventUpdated from:body" hx-swap="innerHTML">
+      <div class="profile-card">
+        <div class="profile-field"><span class="label">Event Title:</span> <span id="summary-title" class="val">Aarav's Naming Ceremony</span></div>
+        <div class="profile-field"><span class="label">Event Type:</span> <span id="summary-type" class="val">Naming Ceremony</span></div>
+        <div class="profile-field"><span class="label">Event Date:</span> <span id="summary-date" class="val" style="color:var(--accent-cyan); font-weight:600;">October 12, 2026</span></div>
+        <div class="profile-field"><span class="label">Target Guests:</span> <span id="summary-count" class="val">150 guests</span></div>
+      </div>
+    </div>
+
+    <h3 class="mt-4">Smart Assistant Capabilities</h3>
+    <ul class="tool-list">
+      <li><span class="tool-dot"></span> 📍 Google Maps Venue Search & Verification</li>
+      <li><span class="tool-dot"></span> 🎨 7 Signature Invitation Card Styles & Image Artwork</li>
+      <li><span class="tool-dot"></span> 👥 Guest Roster Management & RSVP Analytics</li>
+      <li><span class="tool-dot"></span> 📅 Ceremony Itinerary & Stage Timeline Planning</li>
+    </ul>
+  </div>
+</div>

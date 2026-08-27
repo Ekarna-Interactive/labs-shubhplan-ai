@@ -1,85 +1,46 @@
 package main
 
 import (
+	"context"
+	"embed"
 	"flag"
-	"fmt"
-	"io"
 	"log"
+	"net/http"
 	"os"
-	"path/filepath"
+	"os/signal"
+	"strconv"
+	"syscall"
 
-	"github.com/Ekarna-Interactive/labs-shubhplan-ai/config"
-	"github.com/Ekarna-Interactive/labs-shubhplan-ai/generator"
-	"github.com/Ekarna-Interactive/labs-shubhplan-ai/tui"
-	"github.com/Ekarna-Interactive/labs-shubhplan-ai/web"
-
-	tea "github.com/charmbracelet/bubbletea"
+	"shubh-plan-web/pkg/server"
 )
 
+//go:embed all:web
+var webFS embed.FS
+
 func main() {
-	httpPort := flag.Int("port", 3000, "HTTP Web UI Port")
-	sshPort := flag.Int("ssh-port", 2222, "Wish SSH TUI Port")
-	serverMode := flag.Bool("server", false, "Run in daemonized server mode without local terminal TUI")
-	dataDir := flag.String("data-dir", "./data", "Local data storage directory")
+	defaultPort := 3000
+	if envPort := os.Getenv("PORT"); envPort != "" {
+		if p, err := strconv.Atoi(envPort); err == nil {
+			defaultPort = p
+		}
+	}
+	portFlag := flag.Int("port", defaultPort, "HTTP Web Server Port")
 	flag.Parse()
 
-	if os.Getenv("SERVER_MODE") == "true" || os.Getenv("SERVER_MODE") == "1" {
-		*serverMode = true
-	}
+	// Capture Ctrl+C (SIGINT) and SIGTERM for instant graceful shutdown
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
-	// 1. Load local .env config on boot
-	cfg := config.LoadConfig()
+	log.Println("[Shubh Plan Web] Booting independent Genkit Go + Web UI application...")
+	srv := server.NewServer(*portFlag, webFS)
 
-	// Ensure directories exist
-	os.MkdirAll(*dataDir, 0755)
-	os.MkdirAll("./output", 0755)
-
-	// Ensure default demo admin account is pre-configured
-	config.EnsureDefaultDemoUser()
-
-	// Redirect logger to data/app.log to prevent terminal screen corruption in TUI mode
-	logFile, err := os.OpenFile(filepath.Join(*dataDir, "app.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err == nil {
-		if *serverMode {
-			log.SetOutput(io.MultiWriter(os.Stdout, logFile))
-		} else {
-			log.SetOutput(logFile)
-		}
-		defer logFile.Close()
-	}
-
-	log.Println("🚀 Initializing Shubh Plan AI Open Source Application...")
-	log.Printf("📂 Data Directory: %s", *dataDir)
-	log.Printf("🌐 HTMX Web UI Server starting on http://localhost:%d", *httpPort)
-	log.Printf("⚡ Wish SSH TUI Server starting on ssh://localhost:%d", *sshPort)
-
-	// Start Wish SSH TUI Server in background goroutine
-	sshServer := tui.NewSSHServer(*sshPort)
 	go func() {
-		if err := sshServer.Start(); err != nil {
-			log.Printf("Wish SSH Server notice: %v", err)
+		if err := srv.Start(ctx); err != nil && err != http.ErrServerClosed {
+			log.Printf("[Shubh Plan Web Server Error] %v", err)
 		}
 	}()
 
-	// Start HTTP Web UI Server in background goroutine
-	httpServer := web.NewHTTPServer(*httpPort)
-	go func() {
-		if err := httpServer.Start(); err != nil {
-			log.Printf("HTTP Web Server error: %v", err)
-		}
-	}()
-
-	if *serverMode {
-		log.Println("🔒 Running in Daemonized Server Mode (Headless TTY). Press Ctrl+C to stop.")
-		select {} // Keep daemon process alive
-	}
-
-	// Launch local interactive Bubble Tea TUI session
-	builder := generator.NewBasicBuilder()
-	p := tea.NewProgram(tui.InitialModel(cfg, builder), tea.WithAltScreen())
-
-	if _, err := p.Run(); err != nil {
-		fmt.Printf("Fatal error running TUI session: %v\n", err)
-		os.Exit(1)
-	}
+	log.Println("🟢 Running Web Server mode. Press Ctrl+C to stop.")
+	<-ctx.Done()
+	log.Println("[Shubh Plan Web] Shutdown complete.")
 }

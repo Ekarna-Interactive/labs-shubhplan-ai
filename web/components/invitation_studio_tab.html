@@ -1,0 +1,154 @@
+<!-- AI Invitation Studio Tab Component -->
+<div class="studio-layout">
+  <!-- Left Side: Configuration & AI Prompt Synthesizer -->
+  <div class="studio-form-card glass-card">
+    <div class="studio-header">
+      <h2>AI Invitation Studio</h2>
+      <p class="subtitle">Design bespoke, print-ready PNG invitation artwork tailored to your celebration.</p>
+    </div>
+
+    <form id="design-form">
+      <!-- 1. Aspect Ratio Selector -->
+      <div class="form-group">
+        <label class="form-label-bold">1. Select Aspect Ratio</label>
+        <div class="aspect-ratio-grid" id="aspect-ratio-selector">
+          <div class="aspect-option active" data-ratio="9:16">
+            <div class="ratio-box ratio-9-16"></div>
+            <span class="ratio-label">9:16</span>
+            <span class="ratio-sub">Story / Mobile</span>
+          </div>
+          <div class="aspect-option" data-ratio="4:5">
+            <div class="ratio-box ratio-4-5"></div>
+            <span class="ratio-label">4:5</span>
+            <span class="ratio-sub">Portrait / Feed</span>
+          </div>
+          <div class="aspect-option" data-ratio="1:1">
+            <div class="ratio-box ratio-1-1"></div>
+            <span class="ratio-label">1:1</span>
+            <span class="ratio-sub">Square / Post</span>
+          </div>
+          <div class="aspect-option" data-ratio="16:9">
+            <div class="ratio-box ratio-16-9"></div>
+            <span class="ratio-label">16:9</span>
+            <span class="ratio-sub">Banner / Landscape</span>
+          </div>
+        </div>
+        <input type="hidden" id="aspect-ratio-input" value="9:16">
+      </div>
+
+      <!-- 2. Design Style Preset -->
+      <div class="form-group">
+        <label for="aesthetic-theme-input" class="form-label-bold">2. Design Style Preset</label>
+        <select id="aesthetic-theme-input" class="form-control">
+          <option value="South Indian">1. South Indian (Kolam art, banana leaf motifs, marigold garlands & temple gold)</option>
+          <option value="Paper Cut">2. Paper Cut (Intricate 3D layered papercraft & delicate filigree)</option>
+          <option value="Clay 3D" selected>3. Clay 3D (Charming claymation 3D characters & vibrant sculpted depth)</option>
+          <option value="Pop Art">4. Pop Art (Bold graphic comic lines & retro pop halftone colors)</option>
+          <option value="Mughal">5. Mughal (Royal jali lattice arches, emerald & gold floral vines)</option>
+          <option value="Minimalist Gold">6. Minimalist Gold (Obsidian dark background & sleek gold foil line art)</option>
+          <option value="Watercolor">7. Watercolor (Soft hand-painted pastel washes & artistic botanical flora)</option>
+        </select>
+      </div>
+
+      <!-- 3. Custom Elements to Include -->
+      <div class="form-group">
+        <label class="form-label-bold">3. Custom Visual Elements to Include</label>
+        <div class="chips-container" id="custom-elements-chips">
+          <button type="button" class="chip chip-selected" data-value="Elephant Motif">🐘 Elephant Motif</button>
+          <button type="button" class="chip chip-selected" data-value="Marigold Garlands">🌿 Marigold Garlands</button>
+          <button type="button" class="chip" data-value="Peacock Feathers">🪶 Peacock Feathers</button>
+          <button type="button" class="chip" data-value="Lotus Blooms">🌸 Lotus Blooms</button>
+          <button type="button" class="chip" data-value="Diwali Lamps">🪔 Diwali Lamps</button>
+          <button type="button" class="chip" data-value="Kolam Patterns">🦚 Kolam Patterns</button>
+          <button type="button" class="chip" data-value="Royal Lattice Jali">👑 Royal Lattice Jali</button>
+          <button type="button" class="chip" data-value="Gold Foil Border">✨ Gold Foil Border</button>
+          <button type="button" class="chip" data-value="Sculpted Cradle">👶 Sculpted Cradle</button>
+          <button type="button" class="chip" data-value="Flute">🪈 Flute</button>
+        </div>
+        <div class="add-tag-row">
+          <input type="text" id="add-element-input" class="form-control form-control-sm" placeholder="Add custom element (e.g. Traditional Shehnai)...">
+          <button type="button" class="btn btn-secondary btn-sm" id="add-element-btn">+ Add Element</button>
+        </div>
+      </div>
+
+      <!-- 4. Typography & Color Accents -->
+      <div class="form-row">
+        <div class="form-group col">
+          <label for="typography-input" class="form-label-bold">4. Typography Pair</label>
+          <select id="typography-preset" class="form-control mb-2">
+            <option value="Cinzel Decorative & Outfit" selected>Cinzel Decorative & Outfit (Royal & Modern)</option>
+            <option value="Playfair Display & Montserrat">Playfair Display & Montserrat (Editorial)</option>
+            <option value="Great Vibes & Inter">Great Vibes & Inter (Script Calligraphy)</option>
+            <option value="Rozha One & Noto Sans">Rozha One & Noto Sans (Traditional Heritage)</option>
+            <option value="custom">Custom Font Pairing...</option>
+          </select>
+          <input type="text" id="typography-input" value="Cinzel Decorative & Outfit" class="form-control" placeholder="Enter font pair...">
+        </div>
+        <div class="form-group col">
+          <label for="primary-color-input" class="form-label-bold">Primary Accent Color</label>
+          <div class="color-picker-wrapper">
+            <input type="color" id="primary-color-input" value="#D4AF37" class="form-control-color">
+            <div class="color-swatches">
+              <button type="button" class="swatch" style="background:#D4AF37" data-color="#D4AF37" title="Gold"></button>
+              <button type="button" class="swatch" style="background:#E07A5F" data-color="#E07A5F" title="Terracotta"></button>
+              <button type="button" class="swatch" style="background:#059669" data-color="#059669" title="Emerald"></button>
+              <button type="button" class="swatch" style="background:#2563EB" data-color="#2563EB" title="Royal Blue"></button>
+              <button type="button" class="swatch" style="background:#DB2777" data-color="#DB2777" title="Ruby Pink"></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. Custom Instructions -->
+      <div class="form-group">
+        <label for="special-instructions-input" class="form-label-bold">5. Custom Instructions / Visual Notes</label>
+        <textarea id="special-instructions-input" rows="2" class="form-control" placeholder="E.g. Soft ambient background lighting, 3D sculpted textures with subtle drop shadow details..."></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-accent btn-block" id="generate-suggestions-btn">
+        <span>✨ Step 1: Generate AI Prompt Suggestions</span>
+      </button>
+    </form>
+  </div>
+
+  <!-- Right Side: AI Prompt Suggestions & Generated Artwork Concepts Gallery -->
+  <div class="studio-preview-card glass-card">
+    <!-- Step 2: AI Prompt Suggestions Showcase -->
+    <div class="suggestions-section" id="suggestions-section">
+      <div class="section-header">
+        <h3>Step 2: Choose an AI Prompt Suggestion</h3>
+        <span class="badge badge-accent">AI Synthesizer</span>
+      </div>
+      <p class="section-desc">Review prompt concepts generated by the agent based on your parameters. Customize any prompt text before generating card artwork.</p>
+      
+      <div class="prompt-suggestions-grid" id="prompt-suggestions-grid">
+        <!-- Default initial placeholder state -->
+        <div class="empty-suggestions-box">
+          <span class="empty-icon">💡</span>
+          <p>Select your aspect ratio, style preset, and elements on the left, then click <strong>"✨ Generate AI Prompt Suggestions"</strong> to synthesize prompt options.</p>
+        </div>
+      </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- Step 3: Generated Invitation Concepts Gallery -->
+    <div class="gallery-section">
+      <div class="section-header">
+        <h3>Generated Invitation Concepts</h3>
+        <span class="badge badge-outline" id="designs-count-badge">0 Concepts</span>
+      </div>
+      
+      <div class="design-grid" id="design-grid" hx-get="/api/designs" hx-trigger="load, revealed, designsUpdated from:body" hx-swap="innerHTML">
+        <!-- Dynamically populated card artwork concepts via Go HTML template partials -->
+      </div>
+
+      <!-- View More / Show Less Toggle Button -->
+      <div class="view-more-wrapper hidden" id="view-more-wrapper">
+        <button type="button" class="btn btn-secondary btn-sm" id="view-more-designs-btn">
+          <span>👁️ View More Designs</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

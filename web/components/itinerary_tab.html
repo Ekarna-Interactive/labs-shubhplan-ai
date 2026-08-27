@@ -1,0 +1,34 @@
+<!-- Itinerary & Logistics Tab Component -->
+<div class="itinerary-layout">
+  <div class="itinerary-timeline-card glass-card">
+    <div class="card-header-flex">
+      <h2>Scheduled Agenda & Stage Timeline</h2>
+    </div>
+    <div class="timeline-container" id="itinerary-timeline" hx-get="/api/itinerary" hx-trigger="load, itineraryUpdated from:body" hx-swap="innerHTML">
+      <!-- Dynamically populated itinerary items via Go HTML templates -->
+    </div>
+  </div>
+
+  <div class="itinerary-form-card glass-card">
+    <h3>Add Session to Schedule</h3>
+    <form id="add-session-form" hx-post="/api/itinerary" hx-target="#itinerary-timeline" hx-swap="innerHTML" hx-on::after-request="this.reset()">
+      <div class="form-group">
+        <label for="session-time">Timing</label>
+        <input type="text" name="time" id="session-time" placeholder="E.g. 10:00 AM" class="form-control" required>
+      </div>
+      <div class="form-group">
+        <label for="session-title">Session Title</label>
+        <input type="text" name="title" id="session-title" placeholder="E.g. Puja & Namkaran Ceremony" class="form-control" required>
+      </div>
+      <div class="form-group">
+        <label for="session-location">Location / Stage</label>
+        <input type="text" name="location" id="session-location" placeholder="E.g. Main Banquet Stage" class="form-control">
+      </div>
+      <div class="form-group">
+        <label for="session-desc">Description</label>
+        <textarea name="description" id="session-desc" rows="3" class="form-control" placeholder="Session ceremony details..."></textarea>
+      </div>
+      <button type="submit" class="btn btn-accent btn-block">Save to Itinerary</button>
+    </form>
+  </div>
+</div>
