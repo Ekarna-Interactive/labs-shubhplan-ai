@@ -125,6 +125,7 @@ func (s *Server) Start(ctx context.Context) error {
 	mux.HandleFunc("GET /api/designs", s.handleListDesigns)
 	mux.HandleFunc("POST /api/designs/suggestions", s.handleCreatePromptSuggestions)
 	mux.HandleFunc("POST /api/designs", s.handleCreateDesign)
+	mux.HandleFunc("DELETE /api/designs", s.handleDeleteDesign)
 	mux.HandleFunc("POST /api/reset", s.handleResetStore)
 
 	// Wrap entire mux in middleware chain (CORS, Auth, Logging, Panic Recovery)
@@ -244,8 +245,29 @@ func (s *Server) handleListDesigns(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(s.store.ListDesigns())
 }
 
+func (s *Server) checkAPIKeyPresent(r *http.Request) bool {
+	if s.engine.HasAPIKey {
+		return true
+	}
+	apiKeyHeader := strings.TrimSpace(r.Header.Get("X-Gemini-API-Key"))
+	if apiKeyHeader == "" {
+		apiKeyHeader = strings.TrimSpace(r.Header.Get("X-Google-API-Key"))
+	}
+	return apiKeyHeader != ""
+}
+
 func (s *Server) handleCreatePromptSuggestions(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+
+	if !s.checkAPIKeyPresent(r) {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error":   "API_KEY_REQUIRED",
+			"message": "Gemini API Key is required for prompt suggestion synthesis. Please configure your API key.",
+		})
+		return
+	}
+
 	var req genkitengine.PromptSuggestionInput
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Printf("[Prompt Suggestions Endpoint Error] Invalid payload: %v", err)
@@ -271,6 +293,16 @@ func (s *Server) handleCreatePromptSuggestions(w http.ResponseWriter, r *http.Re
 
 func (s *Server) handleCreateDesign(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+
+	if !s.checkAPIKeyPresent(r) {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error":   "API_KEY_REQUIRED",
+			"message": "Gemini API Key is required for invitation artwork generation. Please configure your API key.",
+		})
+		return
+	}
+
 	var req genkitengine.InvitationGenInput
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Printf("[Image Generator Endpoint Error] Invalid payload: %v", err)
@@ -301,6 +333,30 @@ func (s *Server) handleCreateDesign(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("[Image Generator Endpoint Success] Generated design concept ID %s (ImageURL: %s)", res.MainConcept.ID, res.MainConcept.ImageURL)
 	json.NewEncoder(w).Encode(res)
+}
+
+func (s *Server) handleDeleteDesign(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	id := strings.TrimSpace(r.URL.Query().Get("id"))
+	if id == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Missing design ID"})
+		return
+	}
+
+	ok := s.store.DeleteDesign(id)
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Design not found"})
+		return
+	}
+
+	log.Printf("[Design Endpoint Success] Deleted design concept ID %s", id)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success": true,
+		"message": "Design concept deleted successfully",
+		"id":      id,
+	})
 }
 
 func (s *Server) handleHealthCheck(w http.ResponseWriter, r *http.Request) {

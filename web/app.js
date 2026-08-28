@@ -1020,7 +1020,30 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
+    function hasActiveAPIKey() {
+      return !!localStorage.getItem('shubh_gemini_api_key') || !!state.hasServerAPIKey;
+    }
+
     const generatePromptSuggestions = async () => {
+      const suggestionsGrid = document.getElementById('prompt-suggestions-grid');
+
+      if (!hasActiveAPIKey()) {
+        if (suggestionsGrid) {
+          suggestionsGrid.innerHTML = `
+            <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; padding: 18px; text-align: center; color: #f87171; margin-bottom: 15px;">
+              <span style="font-size: 1.5rem; display: block; margin-bottom: 6px;">🔑</span>
+              <strong style="display: block; font-size: 1rem; margin-bottom: 4px;">Gemini API Key Required</strong>
+              <p style="font-size: 0.85rem; color: #cbd5e1; margin-bottom: 12px;">Image generation and prompt synthesis require an active Gemini API Key.</p>
+              <button type="button" class="btn btn-primary btn-sm" id="prompt-open-apikey-btn">🔑 Configure API Key Now</button>
+            </div>
+          `;
+          const btn = document.getElementById('prompt-open-apikey-btn');
+          if (btn) btn.onclick = openAPIKeyModal;
+        }
+        openAPIKeyModal();
+        return;
+      }
+
       const aspect = document.getElementById('aspect-ratio-input')?.value || '9:16';
       const theme = document.getElementById('aesthetic-theme-input')?.value || 'Clay 3D';
       let elements = Array.from(document.querySelectorAll('#custom-elements-chips .chip-selected'))
@@ -1032,16 +1055,19 @@ document.addEventListener('DOMContentLoaded', () => {
       const typography = document.getElementById('typography-input')?.value || 'Cinzel Decorative & Outfit';
       const primaryColor = document.getElementById('primary-color-input')?.value || '#D4AF37';
       const specialInstructions = document.getElementById('special-instructions-input')?.value || '';
-      const suggestionsGrid = document.getElementById('prompt-suggestions-grid');
 
       if (suggestionsGrid) {
         suggestionsGrid.innerHTML = '<div class="loading-box" style="text-align:center; padding:30px;"><span class="typing-indicator">✨ Synthesizing AI prompt suggestions...</span></div>';
       }
 
       try {
+        const clientApiKey = localStorage.getItem('shubh_gemini_api_key') || '';
+        const headers = { 'Content-Type': 'application/json' };
+        if (clientApiKey) headers['X-Gemini-API-Key'] = clientApiKey;
+
         const res = await fetch('/api/flows/invitationPromptSuggestionsFlow', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({
             aspectRatio: aspect,
             stylePreset: theme,
@@ -1052,6 +1078,24 @@ document.addEventListener('DOMContentLoaded', () => {
           })
         });
         const data = await res.json();
+
+        if (res.status === 400 && data.error === 'API_KEY_REQUIRED') {
+          openAPIKeyModal();
+          if (suggestionsGrid) {
+            suggestionsGrid.innerHTML = `
+              <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; padding: 18px; text-align: center; color: #f87171; margin-bottom: 15px;">
+                <span style="font-size: 1.5rem; display: block; margin-bottom: 6px;">🔑</span>
+                <strong style="display: block; font-size: 1rem; margin-bottom: 4px;">Gemini API Key Required</strong>
+                <p style="font-size: 0.85rem; color: #cbd5e1; margin-bottom: 12px;">${escapeHtml(data.message)}</p>
+                <button type="button" class="btn btn-primary btn-sm" id="prompt-open-apikey-btn">🔑 Configure API Key Now</button>
+              </div>
+            `;
+            const btn = document.getElementById('prompt-open-apikey-btn');
+            if (btn) btn.onclick = openAPIKeyModal;
+          }
+          return;
+        }
+
         if (res.ok && data.suggestions && suggestionsGrid) {
           suggestionsGrid.innerHTML = data.suggestions.map((s, idx) => `
             <div class="prompt-suggestion-card" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); padding:16px; border-radius:12px; margin-bottom:12px;">
@@ -1063,6 +1107,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
           document.querySelectorAll('.generate-art-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
+              if (!hasActiveAPIKey()) {
+                alert('🔑 Gemini API Key Required: Please configure your Gemini API Key in settings to generate AI artwork.');
+                openAPIKeyModal();
+                return;
+              }
               const prompt = btn.getAttribute('data-prompt');
               const styleTheme = btn.getAttribute('data-theme');
               const aspectRatio = document.getElementById('aspect-ratio-input')?.value || '4:5';
@@ -1070,9 +1119,13 @@ document.addEventListener('DOMContentLoaded', () => {
               btn.classList.add('btn-rendering-active');
               btn.innerHTML = '⏳ Synthesizing & Rendering PNG...';
               try {
+                const clientKey = localStorage.getItem('shubh_gemini_api_key') || '';
+                const reqHeaders = { 'Content-Type': 'application/json' };
+                if (clientKey) reqHeaders['X-Gemini-API-Key'] = clientKey;
+
                 const genRes = await fetch('/api/flows/invitationGeneratorFlow', {
                   method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
+                  headers: reqHeaders,
                   body: JSON.stringify({
                     promptText: prompt,
                     prompt: prompt,
@@ -1081,6 +1134,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     aspectRatio: aspectRatio
                   })
                 });
+                const genData = await genRes.json();
+                if (genRes.status === 400 && genData.error === 'API_KEY_REQUIRED') {
+                  openAPIKeyModal();
+                  alert(genData.message || 'Gemini API Key is required.');
+                  return;
+                }
                 if (genRes.ok) {
                   const suggestionsGrid = document.getElementById('prompt-suggestions-grid');
                   if (suggestionsGrid) suggestionsGrid.innerHTML = '';
@@ -1125,12 +1184,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let isStudioExpanded = false;
 
-  window.openCardPreview = function(imgUrl, title, theme) {
+  window.deleteDesign = async function(id) {
+    if (!id) return;
+    if (!confirm('Are you sure you want to delete this invitation concept?')) return;
+    try {
+      const res = await fetch(`/api/designs?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        state.designs = (state.designs || []).filter(d => d.id !== id);
+        const modal = document.getElementById('preview-card-modal');
+        if (modal) modal.classList.remove('open');
+        renderDesignGrid();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to delete design concept.');
+      }
+    } catch (e) {
+      console.error('Delete design error:', e);
+    }
+  };
+
+  window.openCardPreview = function(imgUrl, title, theme, designId) {
     const modal = document.getElementById('preview-card-modal');
     const modalImg = document.getElementById('preview-modal-img');
     const modalTitle = document.getElementById('preview-modal-title');
     const modalTheme = document.getElementById('preview-modal-theme');
     const downloadBtn = document.getElementById('preview-modal-download-btn');
+    const deleteBtn = document.getElementById('preview-modal-delete-btn');
 
     const src = imgUrl || '/assets/generated_card_concept.png';
     if (modalImg) modalImg.src = src;
@@ -1139,6 +1220,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (downloadBtn) {
       downloadBtn.href = src;
       downloadBtn.setAttribute('download', `${(title || 'invitation_card').replace(/\s+/g, '_').toLowerCase()}.png`);
+    }
+    if (deleteBtn) {
+      if (designId) {
+        deleteBtn.style.display = 'inline-flex';
+        deleteBtn.onclick = () => deleteDesign(designId);
+      } else {
+        deleteBtn.style.display = 'none';
+      }
     }
     if (modal) modal.classList.add('open');
   };
@@ -1177,7 +1266,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       return `
         <div class="card-art-box" id="design-card-${d.id}" style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
-          <div class="card-img-wrapper" data-img="${imgUrl}" data-title="${title}" data-theme="${theme}" style="width: 100%; height: 380px; background: #050811; cursor: pointer; position: relative;" title="Click for full-screen preview">
+          <div class="card-img-wrapper" data-id="${d.id}" data-img="${imgUrl}" data-title="${title}" data-theme="${theme}" style="width: 100%; height: 380px; background: #050811; cursor: pointer; position: relative;" title="Click for full-screen preview">
             <img src="${imgUrl}" alt="${title}" class="card-img" style="width: 100%; height: 100%; object-fit: contain; display: block;" loading="lazy">
           </div>
           
@@ -1195,12 +1284,15 @@ document.addEventListener('DOMContentLoaded', () => {
               ${escapeHtml(fullPrompt)}
             </p>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: auto;">
-              <a href="${imgUrl}" download="invitation_card.png" class="btn btn-outline btn-sm" style="font-size: 0.78rem; font-weight: 600; padding: 6px 16px; border-radius: 20px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.15); color: #FFFFFF; background: rgba(255,255,255,0.05);">
-                🤖 Download PNG
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: auto; flex-wrap: wrap;">
+              <a href="${imgUrl}" download="invitation_card.png" class="btn btn-outline btn-sm" style="font-size: 0.78rem; font-weight: 600; padding: 6px 14px; border-radius: 20px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.15); color: #FFFFFF; background: rgba(255,255,255,0.05);">
+                🤖 Download
               </a>
-              <button type="button" class="btn-prompt-copy btn btn-sm" data-prompt="${escapeHtml(fullPrompt)}" style="font-size: 0.78rem; font-weight: 700; padding: 6px 16px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px; border: none; color: #0F172A; background: #FFFFFF; cursor: pointer;">
-                📋 Copy Prompt
+              <button type="button" class="btn-prompt-copy btn btn-sm" data-prompt="${escapeHtml(fullPrompt)}" style="font-size: 0.78rem; font-weight: 700; padding: 6px 14px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px; border: none; color: #0F172A; background: #FFFFFF; cursor: pointer;">
+                📋 Copy
+              </button>
+              <button type="button" class="btn-delete-design btn btn-sm" data-id="${d.id}" title="Delete Concept" style="font-size: 0.78rem; font-weight: 700; padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; background: rgba(239, 68, 68, 0.12); cursor: pointer;">
+                🗑️
               </button>
             </div>
           </div>
@@ -1211,10 +1303,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // Bind Image Click Listeners for Full-Screen Preview Modal
     grid.querySelectorAll('.card-img-wrapper').forEach(wrapper => {
       wrapper.onclick = () => {
+        const id = wrapper.getAttribute('data-id');
         const img = wrapper.getAttribute('data-img');
         const title = wrapper.getAttribute('data-title');
         const theme = wrapper.getAttribute('data-theme');
-        openCardPreview(img, title, theme);
+        openCardPreview(img, title, theme, id);
+      };
+    });
+
+    // Bind Delete Design Listeners
+    grid.querySelectorAll('.btn-delete-design').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute('data-id');
+        deleteDesign(id);
       };
     });
 
