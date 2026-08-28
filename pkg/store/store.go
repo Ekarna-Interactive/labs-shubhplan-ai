@@ -158,6 +158,29 @@ func (s *DataStore) loadDisk() {
 		s.itinerary = state.Itinerary
 		s.designs = state.Designs
 	}
+
+	if s.event.Title == "" {
+		s.event = EventProfile{
+			ID:               "evt_default",
+			Title:            "Aarav's Naming Ceremony",
+			EventType:        "Naming Ceremony",
+			HostNames:        "Surya & Ananya",
+			Date:             "2026-10-12",
+			Venue:            "Marhaba Mini Function Hall",
+			Location:         "Vadapalani, Chennai",
+			AestheticTheme:   "South Indian Traditional",
+			Description:      "Traditional Naming Ceremony (Namkaran) celebration for baby Aarav.",
+			TargetGuestCount: 150,
+			VenueDetails: VenueDetails{
+				PrimaryVenue:           "Marhaba Mini Function Hall",
+				VenueFormattedAddress:  "60/2, 2nd St, Sarvamangala Colony, Aruna Colony, Vadapalani, Chennai, Tamil Nadu 600026",
+				Address:                "Vadapalani, Chennai",
+				GoogleMapURL:           "https://maps.google.com/?q=Marhaba+Mini+Function+Hall+Vadapalani+Chennai",
+				GoogleMapDirectionsURL: "https://maps.google.com/maps?daddr=Marhaba+Mini+Function+Hall+Vadapalani+Chennai",
+				VenuePhotoURL:          "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=800&q=80",
+			},
+		}
+	}
 }
 
 // saveDisk flushes current store state to store.json on disk.
@@ -358,6 +381,9 @@ func (s *DataStore) AddDesign(design InvitationDesign) InvitationDesign {
 	}
 	design.CreatedAt = time.Now()
 	s.designs = append([]InvitationDesign{design}, s.designs...)
+	if len(s.designs) > 50 {
+		s.designs = s.designs[:50]
+	}
 	res := design
 	s.mu.Unlock()
 

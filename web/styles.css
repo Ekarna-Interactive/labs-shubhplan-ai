@@ -119,12 +119,58 @@ body {
   color: var(--text-muted);
 }
 
-.nav-metrics {
+.nav-actions {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  position: relative;
-  overflow: visible;
+  flex-wrap: nowrap;
+}
+
+.status-indicator-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.event-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(139, 92, 246, 0.12);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  color: #d8b4fe;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.event-pill:hover {
+  background: rgba(139, 92, 246, 0.22);
+  border-color: rgba(139, 92, 246, 0.5);
+}
+
+.event-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #06b6d4;
+  display: inline-block;
+}
+
+.nav-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.nav-label {
+  display: inline-block;
 }
 
 .metric-pill {
@@ -355,6 +401,7 @@ body {
 
 .chat-input-form input {
   flex: 1;
+  min-width: 0;
   background: var(--bg-dark);
   border: 1px solid var(--border-glass);
   border-radius: var(--radius-md);
@@ -416,6 +463,12 @@ body {
    Side Panel & Event Overview
    ========================================================================== */
 
+.side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
 .side-panel h3 {
   font-family: var(--font-display);
   font-size: 1.05rem;
@@ -434,6 +487,7 @@ body {
   justify-content: space-between;
   border-bottom: 1px solid var(--border-glass);
   padding-bottom: 0.5rem;
+  min-width: 0;
 }
 
 .profile-field .label {
@@ -442,6 +496,8 @@ body {
 .profile-field .val {
   font-weight: 600;
   text-align: right;
+  min-width: 0;
+  word-break: break-word;
 }
 
 .badge-theme {
@@ -632,6 +688,19 @@ body {
 }
 .form-control:focus {
   border-color: var(--accent-cyan, #06B6D4);
+}
+select.form-control {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a0aec0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  padding-right: 2.2rem;
+  cursor: pointer;
+}
+select.form-control option {
+  background: #0f172a;
+  color: #ffffff;
+  padding: 8px;
 }
 .form-row {
   display: flex;
@@ -2062,4 +2131,397 @@ input:-webkit-autofill:active {
   0% { transform: scale(1); }
   50% { transform: scale(1.02); }
   100% { transform: scale(1); }
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN SYSTEM (Desktop, Tablet, Mobile)
+   ========================================================================== */
+
+/* Utility: Table Responsive Touch Scroll Wrapper */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 1. Large Laptops / Tablets Landscape (max-width: 1024px) */
+@media (max-width: 1024px) {
+  .app-container {
+    max-width: 100%;
+    padding: 1.25rem;
+  }
+  .copilot-layout {
+    grid-template-columns: 1.8fr 1fr;
+    gap: 1.25rem;
+  }
+  .studio-layout {
+    grid-template-columns: 1fr 1.3fr;
+    gap: 1.25rem;
+  }
+  .stat-counter {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* 2. Tablets Portrait & Small Laptops (max-width: 992px) */
+@media (max-width: 992px) {
+  .copilot-layout {
+    grid-template-columns: 1fr;
+  }
+  .chat-container {
+    height: 540px;
+  }
+  .studio-layout {
+    grid-template-columns: 1fr;
+  }
+  .itinerary-layout {
+    grid-template-columns: 1fr;
+  }
+  .side-panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+  }
+}
+
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* 3. Mobile Viewports & Tablets (< 768px) */
+@media (max-width: 768px) {
+  .app-container {
+    padding: 0.5rem;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Header & Navbar Mobile Iconification */
+  .navbar {
+    padding: 0.65rem 0.85rem;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.85rem;
+  }
+  .brand {
+    gap: 0.4rem;
+    min-width: 0;
+    cursor: pointer;
+  }
+  .brand:hover {
+    opacity: 0.85;
+  }
+  .brand-logo {
+    width: 36px;
+    height: 36px;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+  .brand-title {
+    font-size: 1.05rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .tagline, .brand-subtitle, .badge-web {
+    display: none !important;
+  }
+  .nav-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    flex-shrink: 0;
+  }
+
+  /* Iconification: Hide text labels inside header pills/buttons on mobile */
+  .nav-label {
+    display: none !important;
+  }
+  .status-indicator-box,
+  .event-pill,
+  #open-apikey-modal-btn,
+  #auth-menu-btn {
+    padding: 5px 8px !important;
+    font-size: 0.75rem !important;
+    border-radius: 16px !important;
+  }
+  .event-pill {
+    max-width: 90px;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  /* Scrollable Navigation Tab Bar */
+  .tab-bar {
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 0.25rem;
+    gap: 0.4rem;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tab-bar::-webkit-scrollbar {
+    display: none;
+  }
+  .tab-btn {
+    flex: 0 0 auto;
+    padding: 0.6rem 0.85rem;
+    font-size: 0.825rem;
+  }
+
+  /* Copilot Chat Mobile Adjustments */
+  .glass-card {
+    padding: 0.75rem !important;
+    box-sizing: border-box !important;
+  }
+  .content-area,
+  .tab-pane,
+  .copilot-layout {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .chat-container {
+    height: 480px;
+    padding: 0.75rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .message {
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .message-system {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .msg-bubble {
+    padding: 0.65rem 0.85rem !important;
+    font-size: 0.825rem !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+    white-space: normal !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .chat-input-form {
+    display: flex !important;
+    width: 100% !important;
+    gap: 0.4rem !important;
+    box-sizing: border-box !important;
+  }
+  .chat-input-form input {
+    padding: 0.6rem 0.75rem !important;
+    font-size: 0.825rem !important;
+    min-width: 0 !important;
+    flex: 1 !important;
+    box-sizing: border-box !important;
+  }
+  #chat-send-btn {
+    flex-shrink: 0 !important;
+    padding: 0.6rem 0.85rem !important;
+    font-size: 0.825rem !important;
+    white-space: nowrap !important;
+  }
+  .send-btn-label {
+    display: none !important;
+  }
+  .quick-prompts {
+    padding: 0.35rem 0 !important;
+    gap: 0.4rem !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .prompt-chip {
+    padding: 0.3rem 0.65rem !important;
+    font-size: 0.725rem !important;
+    flex-shrink: 0 !important;
+  }
+  .side-panel {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 1.25rem !important;
+  }
+  .profile-field {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 2px !important;
+    padding-bottom: 0.4rem !important;
+    width: 100% !important;
+  }
+  .profile-field .val {
+    text-align: left !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+    font-size: 0.85rem !important;
+    width: 100% !important;
+  }
+
+  /* Invitation Studio Generated Concepts Grid - 1 Column on Mobile */
+  .design-grid, #design-grid, #gallery-grid, #concepts-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.25rem !important;
+  }
+
+  /* Guest Roster Mobile Cards Layout */
+  .table-card {
+    padding: 0.85rem !important;
+  }
+  .data-table,
+  .data-table thead,
+  .data-table tbody,
+  .data-table th,
+  .data-table td,
+  .data-table tr {
+    display: block !important;
+    width: 100% !important;
+  }
+  .data-table thead {
+    display: none !important;
+  }
+  .data-table tr {
+    background: rgba(15, 23, 42, 0.85) !important;
+    border: 1px solid var(--border-glass) !important;
+    border-radius: var(--radius-md) !important;
+    margin-bottom: 0.85rem !important;
+    padding: 0.85rem 1rem !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  }
+  .data-table td {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 0.45rem 0 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    font-size: 0.85rem !important;
+    text-align: right !important;
+  }
+  .data-table td:last-child {
+    border-bottom: none !important;
+    padding-top: 0.65rem !important;
+  }
+  .data-table td::before {
+    content: attr(data-label);
+    font-weight: 700 !important;
+    color: var(--text-muted) !important;
+    font-size: 0.78rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    text-align: left !important;
+    margin-right: 0.5rem !important;
+  }
+  .data-table td.action-cell {
+    justify-content: flex-end !important;
+  }
+  .data-table td.action-cell::before {
+    content: '' !important;
+    display: none !important;
+  }
+  .data-table td.empty-table-msg::before {
+    content: '' !important;
+    display: none !important;
+  }
+
+  /* Roster Header & Metrics */
+  .roster-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  .stat-counter {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+  .table-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  /* Timeline & Forms Stacking */
+  .timeline-item {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+/* 4. Small Smartphone Viewports (< 576px) */
+@media (max-width: 576px) {
+  html, body, #app, .app-container, .navbar, .tab-bar, .content-area, .tab-pane, .copilot-layout, .chat-container, .side-panel, .glass-card {
+    width: 100% !important;
+    max-width: 100vw !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .app-container {
+    padding: 0.35rem !important;
+  }
+
+  .glass-card {
+    padding: 0.6rem !important;
+  }
+
+  .chat-container {
+    height: 440px !important;
+    padding: 0.6rem !important;
+  }
+
+  .msg-bubble {
+    padding: 0.55rem 0.75rem !important;
+    font-size: 0.8rem !important;
+  }
+
+  .aspect-ratio-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem;
+  }
+
+  #prompt-suggestions-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .stat-counter {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Responsive Modals */
+  .modal-card {
+    max-width: 94vw !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    padding: 1.25rem !important;
+    border-radius: var(--radius-md) !important;
+  }
+}
+
+/* 5. Extra Small Smartphones (< 430px) */
+@media (max-width: 430px) {
+  .brand-title {
+    font-size: 0.95rem;
+  }
+  .badge {
+    display: none !important;
+  }
+  .event-pill {
+    display: none !important;
+  }
+  .stat-counter {
+    grid-template-columns: 1fr !important;
+  }
+  .chat-container {
+    height: 410px;
+  }
 }

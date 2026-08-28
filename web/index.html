@@ -22,7 +22,7 @@
   <div id="app" class="app-container">
     <!-- Navbar Component -->
     <header class="navbar">
-      <div class="brand">
+      <div class="brand" id="brand-logo-link" style="cursor: pointer;" title="Click to return to AI Assistant tab">
         <div class="brand-logo">✨</div>
         <div class="brand-text">
           <h2 style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
@@ -32,25 +32,27 @@
         </div>
       </div>
 
-      <div class="nav-actions" style="display: flex; align-items: center; gap: 12px;">
-        <div class="status-indicator-box" id="app-mode-badge" title="Active Operating Mode" style="display: flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.05); padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; border: 1px solid rgba(255, 255, 255, 0.08);">
+      <div class="nav-actions">
+        <div class="status-indicator-box" id="app-mode-badge" title="Active Operating Mode">
           <span class="status-indicator" id="app-mode-dot"></span>
-          <span id="app-mode-text" style="font-weight: 600;">DEMO MODE</span>
+          <span id="app-mode-text" class="nav-label" style="font-weight: 600;">DEMO MODE</span>
         </div>
 
         <button type="button" class="btn btn-sm btn-outline" id="open-apikey-modal-btn" title="Configure Gemini API Key">
           <span class="dot" id="key-status-dot"></span>
-          <span>🔑 API Key</span>
+          <span class="nav-icon">🔑</span>
+          <span class="nav-label"> API Key</span>
         </button>
 
-        <div class="event-pill" id="event-pill" title="Click to view event details" style="display: flex; align-items: center; gap: 8px; background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(139, 92, 246, 0.3); padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; color: #d8b4fe; cursor: pointer;">
-          <span class="event-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #06b6d4;"></span>
-          <span id="header-event-name" style="font-weight: 600;">Aarav's Naming Ceremony</span>
+        <div class="event-pill" id="event-pill" title="Click to view event details">
+          <span class="event-dot"></span>
+          <span id="header-event-name" class="nav-label" style="font-weight: 600;">Aarav's Naming Ceremony</span>
         </div>
 
         <div class="user-menu-wrapper" style="position: relative;">
           <button type="button" class="btn btn-primary btn-sm" id="auth-menu-btn">
-            <span id="auth-btn-text">Sign Up / Login</span>
+            <span class="nav-icon">👤</span>
+            <span class="nav-label" id="auth-btn-text">Sign Up / Login</span>
           </button>
           
           <div class="user-dropdown-menu hidden" id="user-dropdown-menu" style="position: absolute; top: calc(100% + 8px); right: 0; background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 12px; min-width: 220px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); z-index: 1000;">
@@ -59,15 +61,18 @@
               <div class="dropdown-role" id="dropdown-user-role" style="font-size: 0.75rem; color: #94a3b8;">Role: PLANNER</div>
             </div>
             <hr style="border: none; border-top: 1px solid rgba(255, 255, 255, 0.08); margin: 8px 0;">
-            <button type="button" class="dropdown-item" id="menu-event-profile-btn" style="width: 100%; text-align: left; background: none; border: none; color: #f8fafc; padding: 6px 8px; font-size: 0.85rem; cursor: pointer; border-radius: 6px;">
-              <span>📅 Event Profile</span>
+            <button type="button" class="dropdown-item" id="menu-event-profile-btn" style="width: 100%; text-align: left; background: none; border: none; color: #f8fafc; padding: 6px 8px; font-size: 0.85rem; cursor: pointer; border-radius: 6px; display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1rem;">📅</span>
+              <span>Event Profile</span>
             </button>
-            <button type="button" class="dropdown-item" id="menu-account-settings-btn" style="width: 100%; text-align: left; background: none; border: none; color: #f8fafc; padding: 6px 8px; font-size: 0.85rem; cursor: pointer; border-radius: 6px;">
-              <span>⚙️ Account Settings</span>
+            <button type="button" class="dropdown-item" id="menu-account-settings-btn" style="width: 100%; text-align: left; background: none; border: none; color: #f8fafc; padding: 6px 8px; font-size: 0.85rem; cursor: pointer; border-radius: 6px; display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1rem;">⚙️</span>
+              <span>Account Settings</span>
             </button>
             <hr style="border: none; border-top: 1px solid rgba(255, 255, 255, 0.08); margin: 8px 0;">
-            <button type="button" class="dropdown-item text-danger" id="menu-logout-btn" style="width: 100%; text-align: left; background: none; border: none; color: #f87171; padding: 6px 8px; font-size: 0.85rem; cursor: pointer; border-radius: 6px;">
-              <span>🚪 Sign Out</span>
+            <button type="button" class="dropdown-item text-danger" id="menu-logout-btn" style="width: 100%; text-align: left; background: none; border: none; color: #f87171; padding: 6px 8px; font-size: 0.85rem; cursor: pointer; border-radius: 6px; display: flex; align-items: center; gap: 8px;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+              <span>Sign Out</span>
             </button>
           </div>
         </div>
@@ -161,14 +166,14 @@
 
               <input type="text" id="chat-input" placeholder="Type instructions or '/' for quick actions..." autocomplete="off" required>
               <button type="submit" class="btn btn-accent" id="chat-send-btn">
-                <span>Send</span>
+                <span class="send-btn-label">Send</span>
                 <span>➔</span>
               </button>
             </form>
           </div>
 
           <!-- Side Panel: Event Overview & Venue -->
-          <div class="side-panel" style="display: flex; flex-direction: column; gap: 1.5rem;">
+          <div class="side-panel">
             <div class="glass-card">
               <h3 style="font-family: var(--font-display); font-size: 1.05rem; margin-bottom: 1rem;">Event Overview</h3>
               <div class="profile-card" id="event-profile-overview">
@@ -355,7 +360,7 @@
                 <span class="badge badge-outline" id="designs-count-badge">0 Concepts</span>
               </div>
               
-              <div class="design-grid" id="design-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+              <div class="design-grid" id="design-grid">
                 <!-- Populated dynamically via JS -->
               </div>
 
@@ -592,7 +597,18 @@
             </div>
             <div class="form-group col">
               <label for="profile-type-input" class="form-label-bold">Event Type</label>
-              <input type="text" id="profile-type-input" class="form-control" required>
+              <select id="profile-type-input" class="form-control" required>
+                <option value="Naming Ceremony">Naming Ceremony (Namkaran)</option>
+                <option value="Wedding Celebration">Wedding Celebration (Vivaha)</option>
+                <option value="Engagement Ceremony">Engagement / Ring Ceremony</option>
+                <option value="Birthday Celebration">Birthday Celebration</option>
+                <option value="Anniversary Gala">Anniversary Gala</option>
+                <option value="Baby Shower">Baby Shower (Seemantham / Godh Bharai)</option>
+                <option value="Housewarming Ceremony">Housewarming Ceremony (Griha Pravesh)</option>
+                <option value="Corporate Gala & Event">Corporate Gala & Event</option>
+                <option value="Cultural Fest & Concert">Cultural Fest & Concert</option>
+                <option value="Other Special Event">Other Special Event</option>
+              </select>
             </div>
           </div>
           <div class="form-row">
@@ -618,11 +634,26 @@
           <div class="form-row">
             <div class="form-group col">
               <label for="profile-theme-input" class="form-label-bold">Aesthetic Theme</label>
-              <input type="text" id="profile-theme-input" class="form-control">
+              <select id="profile-theme-input" class="form-control">
+                <option value="South Indian Traditional">South Indian Traditional</option>
+                <option value="Royal Rajputana Palace">Royal Rajputana Palace</option>
+                <option value="Modern Minimalist Pastel">Modern Minimalist Pastel</option>
+                <option value="Clay 3D Festivity">Clay 3D Festivity</option>
+                <option value="Bollywood Retro Glam">Bollywood Retro Glam</option>
+                <option value="Boho Floral Chic">Boho Floral Chic</option>
+                <option value="Golden Marigold Celebration">Golden Marigold Celebration</option>
+              </select>
             </div>
             <div class="form-group col">
               <label for="profile-guests-input" class="form-label-bold">Target Guest Count</label>
-              <input type="number" id="profile-guests-input" class="form-control" min="1">
+              <select id="profile-guests-input" class="form-control">
+                <option value="50">50 Guests (Intimate Gathering)</option>
+                <option value="100">100 Guests (Classic Celebration)</option>
+                <option value="150">150 Guests (Standard Function)</option>
+                <option value="250">250 Guests (Grand Event)</option>
+                <option value="500">500 Guests (Mega Celebration)</option>
+                <option value="1000">1,000+ Guests (Royal Banquet)</option>
+              </select>
             </div>
           </div>
           <div class="form-group">
