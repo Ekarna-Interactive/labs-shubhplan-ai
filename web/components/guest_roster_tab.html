@@ -97,19 +97,21 @@
     </select>
   </div>
 
-  <table class="data-table" id="guests-table">
-    <thead>
-      <tr>
-        <th>Guest Name</th>
-        <th>Category / Email</th>
-        <th>RSVP Status</th>
-        <th>Party Size</th>
-        <th>Dietary Requirements</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody id="guests-table-body" hx-get="/api/guests" hx-trigger="load, guestListUpdated from:body" hx-swap="innerHTML">
-      <!-- Dynamically populated via Go HTML Template Partials -->
-    </tbody>
-  </table>
+  <div class="table-responsive">
+    <table class="data-table" id="guests-table">
+      <thead>
+        <tr>
+          <th>Guest Name</th>
+          <th>Category / Email</th>
+          <th>RSVP Status</th>
+          <th>Party Size</th>
+          <th>Dietary Requirements</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="guests-table-body" hx-get="/api/guests" hx-trigger="load, guestListUpdated from:body" hx-swap="innerHTML">
+        <!-- Dynamically populated via Go HTML Template Partials -->
+      </tbody>
+    </table>
+  </div>
 </div>

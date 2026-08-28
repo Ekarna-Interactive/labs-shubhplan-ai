@@ -3,6 +3,7 @@ package genkitengine
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/firebase/genkit/go/ai"
 	aix "github.com/firebase/genkit/go/ai/exp"
@@ -28,6 +29,8 @@ func RegisterAgents(engine *Engine, s *store.DataStore, toolMap map[string]ai.To
 	for _, t := range toolMap {
 		toolRefList = append(toolRefList, t)
 	}
+
+	PruneOldSessionFiles("./data/sessions", 7*24*time.Hour)
 
 	var sessionStore aix.SessionStore[any]
 	fileStore, err := localstore.NewFileSessionStore[any]("./data/sessions")

@@ -288,7 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const role = state.user.userRole || state.user.role || 'Planner';
       const displayStr = email.includes('@') ? email.split('@')[0] : email;
 
-      if (authText) authText.textContent = `👤 ${displayStr}`;
+      if (authText) authText.textContent = displayStr;
       if (dropEmail) dropEmail.textContent = email;
       if (dropRole) dropRole.textContent = `Role: ${role.toUpperCase()}`;
 
@@ -489,6 +489,27 @@ document.addEventListener('DOMContentLoaded', () => {
     return '';
   }
 
+  function setSelectOrAddOption(selectEl, value) {
+    if (!selectEl || value === undefined || value === null) return;
+    const strVal = value.toString().trim();
+    if (!strVal) return;
+    let exists = false;
+    for (let i = 0; i < selectEl.options.length; i++) {
+      if (selectEl.options[i].value.toLowerCase() === strVal.toLowerCase()) {
+        selectEl.selectedIndex = i;
+        exists = true;
+        break;
+      }
+    }
+    if (!exists) {
+      const opt = document.createElement('option');
+      opt.value = strVal;
+      opt.textContent = strVal;
+      selectEl.appendChild(opt);
+      selectEl.value = strVal;
+    }
+  }
+
   async function openEventProfileModal() {
     const modal = document.getElementById('event-profile-modal');
     if (!modal) return;
@@ -498,13 +519,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const evt = await res.json();
         state.event = evt;
         document.getElementById('profile-title-input').value = evt.title || '';
-        document.getElementById('profile-type-input').value = evt.eventType || '';
+        setSelectOrAddOption(document.getElementById('profile-type-input'), evt.eventType || 'Naming Ceremony');
         document.getElementById('profile-hosts-input').value = evt.hostNames || '';
         document.getElementById('profile-date-input').value = formatDateForInput(evt.date);
         document.getElementById('profile-venue-input').value = evt.venue || '';
         document.getElementById('profile-location-input').value = evt.location || '';
-        document.getElementById('profile-theme-input').value = evt.aestheticTheme || '';
-        document.getElementById('profile-guests-input').value = evt.targetGuestCount || '';
+        setSelectOrAddOption(document.getElementById('profile-theme-input'), evt.aestheticTheme || 'South Indian Traditional');
+        setSelectOrAddOption(document.getElementById('profile-guests-input'), evt.targetGuestCount || 150);
         document.getElementById('profile-desc-input').value = evt.description || '';
       }
     } catch (e) {
@@ -630,28 +651,46 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------------------------------------------------------------------------
   // 6. Tab Navigation
   // ---------------------------------------------------------------------------
-  function initTabs() {
+  function switchTab(targetTab) {
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabPanes = document.querySelectorAll('.tab-pane');
 
+    tabBtns.forEach(b => {
+      if (b.getAttribute('data-tab') === targetTab) {
+        b.classList.add('active');
+      } else {
+        b.classList.remove('active');
+      }
+    });
+
+    tabPanes.forEach(pane => {
+      if (pane.id === targetTab) {
+        pane.classList.add('active');
+      } else {
+        pane.classList.remove('active');
+      }
+    });
+
+    state.activeTab = targetTab;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function initTabs() {
+    const tabBtns = document.querySelectorAll('.tab-btn');
     tabBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         const targetTab = btn.getAttribute('data-tab');
-
-        tabBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-
-        tabPanes.forEach(pane => {
-          if (pane.id === targetTab) {
-            pane.classList.add('active');
-          } else {
-            pane.classList.remove('active');
-          }
-        });
-
-        state.activeTab = targetTab;
+        switchTab(targetTab);
       });
     });
+
+    const brandLogoLink = document.getElementById('brand-logo-link');
+    if (brandLogoLink) {
+      brandLogoLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        switchTab('tab-copilot');
+      });
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -1328,16 +1367,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
       return `
         <tr id="guest-row-${g.id}" class="guest-row">
-          <td style="font-weight:600;">${escapeHtml(g.name)}</td>
-          <td style="color:var(--text-secondary);">${escapeHtml(g.category || 'Family')}</td>
-          <td>
+          <td data-label="Guest Name" style="font-weight:600;">${escapeHtml(g.name)}</td>
+          <td data-label="Category" style="color:var(--text-secondary);">${escapeHtml(g.category || 'Family')}</td>
+          <td data-label="RSVP Status">
             <span class="status-tag ${badgeClass}">${escapeHtml((g.rsvpStatus || 'Pending').toUpperCase())}</span>
           </td>
-          <td class="text-secondary">+${g.plusOnes || 0} (${g.plusOnes || 0} plus ones)</td>
-          <td>
+          <td data-label="Party Size" class="text-secondary">+${g.plusOnes || 0} (${g.plusOnes || 0} plus ones)</td>
+          <td data-label="Dietary">
             <span class="diet-tag" style="background:rgba(212,175,55,0.12); color:#F3E5AB; padding:2px 8px; border-radius:12px; font-size:0.8rem; border:1px solid rgba(212,175,55,0.3);">${escapeHtml(g.dietaryRequirements || 'No Restrictions')}</span>
           </td>
-          <td class="action-cell">
+          <td data-label="Actions" class="action-cell">
             <div class="row-actions" style="display:flex; gap:6px;">
               <button type="button" class="btn-icon toggle-rsvp-btn" data-id="${g.id}" title="Toggle RSVP Status" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:4px 8px; cursor:pointer;">🔄</button>
               <button type="button" class="btn-icon delete-guest-btn text-danger" data-id="${g.id}" data-name="${escapeHtml(g.name)}" title="Remove Guest" style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:6px; padding:4px 8px; cursor:pointer;">🗑️</button>

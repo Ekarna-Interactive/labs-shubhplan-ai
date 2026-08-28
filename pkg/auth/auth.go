@@ -126,6 +126,7 @@ func GetAuthManager() *AuthManager {
 			dir = "./data"
 		}
 		defaultAuthManager = NewAuthManager(filepath.Join(dir, "users.json"))
+		go defaultAuthManager.startSessionCleaner(15 * time.Minute)
 	})
 	return defaultAuthManager
 }
@@ -338,12 +339,12 @@ func (am *AuthManager) CreateGuestDemoSession() Session {
 }
 
 func (am *AuthManager) GetSession(token string) (Session, bool) {
-	am.mu.RLock()
-	defer am.mu.RUnlock()
-
 	if token == "" {
 		return Session{}, false
 	}
+
+	am.mu.Lock()
+	defer am.mu.Unlock()
 
 	sess, exists := am.sessions[token]
 	if !exists {
@@ -351,6 +352,7 @@ func (am *AuthManager) GetSession(token string) (Session, bool) {
 	}
 
 	if time.Now().After(sess.ExpiresAt) {
+		delete(am.sessions, token)
 		return Session{}, false
 	}
 
@@ -361,6 +363,32 @@ func (am *AuthManager) InvalidateSession(token string) {
 	am.mu.Lock()
 	defer am.mu.Unlock()
 	delete(am.sessions, token)
+}
+
+func (am *AuthManager) startSessionCleaner(interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	for range ticker.C {
+		am.CleanExpiredSessions()
+	}
+}
+
+// CleanExpiredSessions sweeps the sessions map and removes all expired sessions.
+func (am *AuthManager) CleanExpiredSessions() int {
+	am.mu.Lock()
+	defer am.mu.Unlock()
+
+	now := time.Now()
+	cleaned := 0
+	for token, sess := range am.sessions {
+		if now.After(sess.ExpiresAt) {
+			delete(am.sessions, token)
+			cleaned++
+		}
+	}
+	if cleaned > 0 {
+		log.Printf("[Auth Manager] Purged %d expired auth sessions from memory", cleaned)
+	}
+	return cleaned
 }
 
 func (am *AuthManager) DeleteUser(userID string) error {

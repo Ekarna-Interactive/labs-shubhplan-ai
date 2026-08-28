@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -56,14 +57,36 @@ func NewServer(port int, webFS embed.FS) *Server {
 func (s *Server) Start(ctx context.Context) error {
 	mux := http.NewServeMux()
 
-	// 1. Static Filesystem Handler (Embedded web assets)
+	// 1. Static Filesystem Handler (Local Disk + Embedded Web Assets with Cache Prevention)
 	webSub, err := fs.Sub(s.webFS, "web")
 	if err != nil {
 		log.Printf("[Server Warning] Embedded web assets sub-filesystem error: %v", err)
-	} else {
-		fileServer := http.FileServer(http.FS(webSub))
-		mux.Handle("/", fileServer)
 	}
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		w.Header().Set("Pragma", "no-cache")
+		w.Header().Set("Expires", "0")
+
+		// Try loading static asset directly from local ./web directory first
+		cleanPath := filepath.Clean(r.URL.Path)
+		if cleanPath == "\\" || cleanPath == "/" {
+			cleanPath = "/index.html"
+		}
+		localDiskPath := filepath.Join(".", "web", filepath.FromSlash(cleanPath))
+		if stat, statErr := os.Stat(localDiskPath); statErr == nil && !stat.IsDir() {
+			http.ServeFile(w, r, localDiskPath)
+			return
+		}
+
+		// Fallback to embedded filesystem
+		if webSub != nil {
+			http.FileServer(http.FS(webSub)).ServeHTTP(w, r)
+			return
+		}
+
+		http.NotFound(w, r)
+	})
 
 	// Dynamic asset generator for SVG card placeholders
 	mux.HandleFunc("GET /assets/", s.handleAssetPlaceholder)
@@ -527,6 +550,13 @@ func (s *Server) handleStreamingAssistant(w http.ResponseWriter, r *http.Request
 	// Stream response preserving original line breaks and list formatting
 	lines := strings.Split(out.Response, "\n")
 	for lIdx, line := range lines {
+		select {
+		case <-r.Context().Done():
+			log.Println("[SSE Assistant Stream] Client disconnected, aborting token streaming loop.")
+			return
+		default:
+		}
+
 		words := strings.Fields(line)
 		if len(words) == 0 {
 			if lIdx < len(lines)-1 {
@@ -543,6 +573,13 @@ func (s *Server) handleStreamingAssistant(w http.ResponseWriter, r *http.Request
 		}
 
 		for wIdx, word := range words {
+			select {
+			case <-r.Context().Done():
+				log.Println("[SSE Assistant Stream] Client disconnected, aborting token streaming loop.")
+				return
+			default:
+			}
+
 			chunk := word
 			if wIdx < len(words)-1 {
 				chunk += " "
