@@ -391,6 +391,29 @@ func (s *DataStore) AddDesign(design InvitationDesign) InvitationDesign {
 	return res
 }
 
+// DeleteDesign removes a design concept by ID and auto-flushes to disk.
+func (s *DataStore) DeleteDesign(id string) bool {
+	s.mu.Lock()
+	found := false
+	var updated []InvitationDesign
+	for _, d := range s.designs {
+		if d.ID == id {
+			found = true
+			continue
+		}
+		updated = append(updated, d)
+	}
+	if found {
+		s.designs = updated
+	}
+	s.mu.Unlock()
+
+	if found {
+		s.saveDisk()
+	}
+	return found
+}
+
 // ExportJSON returns the entire store state as formatted JSON bytes.
 func (s *DataStore) ExportJSON() ([]byte, error) {
 	s.mu.RLock()

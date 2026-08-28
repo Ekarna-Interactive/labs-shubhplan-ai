@@ -711,9 +711,14 @@
         <div class="preview-img-container" style="max-height: 520px; overflow: hidden; border-radius: 12px; border: 1px solid rgba(212,175,55,0.4); margin-bottom: 1.25rem; box-shadow: 0 10px 30px rgba(0,0,0,0.6);">
           <img src="" alt="Invitation Preview" id="preview-modal-img" style="width: 100%; height: auto; max-height: 500px; object-fit: contain; display: block; margin: 0 auto;">
         </div>
-        <div class="modal-actions" style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+        <div class="modal-actions" style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
           <span class="badge badge-accent" id="preview-modal-theme" style="padding: 6px 14px; font-size: 0.85rem;">Clay 3D</span>
-          <a href="#" download="invitation_card.png" class="btn btn-accent btn-sm" id="preview-modal-download-btn" style="text-decoration: none;">⬇️ Download High-Res PNG</a>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button type="button" class="btn btn-sm" id="preview-modal-delete-btn" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; padding: 6px 14px; border-radius: 20px; cursor: pointer; font-size: 0.82rem; font-weight: 600;">
+              🗑️ Delete
+            </button>
+            <a href="#" download="invitation_card.png" class="btn btn-accent btn-sm" id="preview-modal-download-btn" style="text-decoration: none;">⬇️ Download PNG</a>
+          </div>
         </div>
       </div>
     </div>

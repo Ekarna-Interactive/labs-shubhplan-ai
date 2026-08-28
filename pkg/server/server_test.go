@@ -3,12 +3,14 @@ package server
 import (
 	"embed"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 
 	"shubh-plan-web/pkg/middleware"
+	"shubh-plan-web/pkg/store"
 )
 
 // Dummy embed.FS for testing
@@ -99,5 +101,26 @@ func TestDomainRESTEndpoints(t *testing.T) {
 	handler.ServeHTTP(rrReset, reqReset)
 	if rrReset.Code != http.StatusOK {
 		t.Fatalf("expected 200 OK on POST /api/reset, got %d", rrReset.Code)
+	}
+}
+
+func TestDeleteDesignEndpoint(t *testing.T) {
+	srv := setupTestServer(t)
+
+	d1 := srv.store.AddDesign(store.InvitationDesign{Headline: "Test Design"})
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("DELETE /api/designs", srv.handleDeleteDesign)
+
+	req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/designs?id=%s", d1.ID), nil)
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK on DELETE /api/designs, got %d", rr.Code)
+	}
+
+	if len(srv.store.ListDesigns()) != 0 {
+		t.Fatalf("expected design to be deleted from store")
 	}
 }

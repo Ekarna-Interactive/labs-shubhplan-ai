@@ -123,3 +123,31 @@ func TestClearStore(t *testing.T) {
 		t.Fatalf("expected store to be completely reset")
 	}
 }
+
+func TestDeleteDesign(t *testing.T) {
+	s := setupTestStore(t)
+
+	d1 := s.AddDesign(InvitationDesign{Headline: "Royal Gold Invitation"})
+	if d1.ID == "" {
+		t.Fatalf("expected auto-generated design ID")
+	}
+
+	designs := s.ListDesigns()
+	if len(designs) != 1 {
+		t.Fatalf("expected 1 design concept, got %d", len(designs))
+	}
+
+	ok := s.DeleteDesign(d1.ID)
+	if !ok {
+		t.Fatalf("expected DeleteDesign to return true")
+	}
+
+	if len(s.ListDesigns()) != 0 {
+		t.Fatalf("expected 0 design concepts after deletion")
+	}
+
+	ok2 := s.DeleteDesign("non_existent_id")
+	if ok2 {
+		t.Fatalf("expected DeleteDesign for invalid ID to return false")
+	}
+}
