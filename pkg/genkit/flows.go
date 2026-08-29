@@ -114,6 +114,20 @@ func RegisterFlows(engine *Engine, s *store.DataStore, toolMap map[string]ai.Too
 			if activeKey != "" && activeKey != "dummy" && activeKey != "byok_placeholder_key" {
 				out, err := callGeminiAssistant(ctx, activeKey, input.UserMessage, s, input.SessionID)
 				if err == nil && strings.TrimSpace(out.Response) != "" {
+					// Ensure interactive component widgets are attached for natural language intents
+					if (strings.Contains(msgLower, "invitation") || strings.Contains(msgLower, "invite") || strings.Contains(msgLower, "card")) && (strings.Contains(msgLower, "design") || strings.Contains(msgLower, "generate") || strings.Contains(msgLower, "create") || strings.Contains(msgLower, "make") || strings.Contains(msgLower, "want") || strings.Contains(msgLower, "like")) {
+						if !strings.Contains(out.Response, "[WIDGET:") {
+							out.Response += "\n\n[WIDGET:GENERATE_INVITATION]"
+						}
+					} else if strings.Contains(msgLower, "add") && (strings.Contains(msgLower, "guest") || strings.Contains(msgLower, "roster")) {
+						if !strings.Contains(out.Response, "[WIDGET:") {
+							out.Response += "\n\n[WIDGET:ADD_GUEST]"
+						}
+					} else if strings.Contains(msgLower, "schedule") || strings.Contains(msgLower, "itinerary") || strings.Contains(msgLower, "timeline") {
+						if !strings.Contains(out.Response, "[WIDGET:") {
+							out.Response += "\n\n[WIDGET:ADD_ITINERARY]"
+						}
+					}
 					return out, nil
 				}
 				log.Printf("[Gemini Assistant Warning] callGeminiAssistant error: %v, falling back...", err)
@@ -364,6 +378,38 @@ func RegisterFlows(engine *Engine, s *store.DataStore, toolMap map[string]ai.Too
 // callGeminiAssistant invokes Gemini REST API using the client's API key to execute AI assistant logic.
 func callGeminiAssistant(ctx context.Context, apiKey string, userMsg string, s *store.DataStore, sessionID string) (AssistantOutput, error) {
 	evt := s.GetEvent()
+	guests := s.ListGuests()
+	confirmedCount := 0
+	pendingCount := 0
+	declinedCount := 0
+	guestSummaryList := []string{}
+	for _, g := range guests {
+		if strings.EqualFold(g.RSVPStatus, "confirmed") {
+			confirmedCount++
+		} else if strings.EqualFold(g.RSVPStatus, "declined") {
+			declinedCount++
+		} else {
+			pendingCount++
+		}
+		guestSummaryList = append(guestSummaryList, fmt.Sprintf("%s (%s - %s, Plus Ones: +%d, Dietary: %s)", g.Name, g.Category, g.RSVPStatus, g.PlusOnes, g.DietaryRequirements))
+	}
+	guestStr := fmt.Sprintf("Total Registered: %d (Confirmed: %d, Pending: %d, Declined: %d)", len(guests), confirmedCount, pendingCount, declinedCount)
+	if len(guestSummaryList) > 0 {
+		guestStr += "\n- Guest Entries: " + strings.Join(guestSummaryList, "; ")
+	} else {
+		guestStr += "\n- Guest Entries: None registered yet"
+	}
+
+	itinItems := s.ListItinerary()
+	itinList := []string{}
+	for _, item := range itinItems {
+		itinList = append(itinList, fmt.Sprintf("%s: %s at %s", item.Time, item.Title, item.Location))
+	}
+	itinStr := fmt.Sprintf("%d scheduled sessions", len(itinItems))
+	if len(itinList) > 0 {
+		itinStr += "\n- Sessions: " + strings.Join(itinList, "; ")
+	}
+
 	sysPrompt := fmt.Sprintf(`You are Shubh Plan Copilot, an expert AI Event Planner & Concierge.
 Current Event Workspace Profile:
 - Title: %q
@@ -372,16 +418,23 @@ Current Event Workspace Profile:
 - Venue: %q
 - Host Names: %q
 - Aesthetic Theme: %q
-- Target Guest Count: %d
+- Target Expected Guest Count: %d
+
+Current Guest Roster & RSVP Statuses:
+- %s
+
+Current Event Itinerary Schedule:
+- %s
 
 User Request: %q
 
 INSTRUCTIONS:
-1. If the user mentions event creation or event details (e.g. naming ceremony, wedding, birthday, host names, venue, date, guest count, aesthetic theme), extract those event details.
-2. If the user asks to generate/create an invitation card or design artwork, append [WIDGET:GENERATE_INVITATION] at the end of your response text.
-3. If the user asks to add guests or manage guest roster, append [WIDGET:ADD_GUEST] at the end of your response text.
-4. If the user asks to schedule a session or update itinerary, append [WIDGET:ADD_ITINERARY] at the end of your response text.
-5. Return a JSON object with NO markdown formatting matching this exact schema:
+1. When asked about guests or RSVPs, give exact numbers for Target Expected Guests (%d), Total Registered (%d), and Confirmed RSVPs (%d), including specific guest entries if relevant.
+2. If the user mentions event creation or event details (e.g. naming ceremony, wedding, birthday, host names, venue, date, guest count, aesthetic theme), extract those event details.
+3. If the user asks to generate/create an invitation card or design artwork, append [WIDGET:GENERATE_INVITATION] at the end of your response text.
+4. If the user asks to add guests or manage guest roster, append [WIDGET:ADD_GUEST] at the end of your response text.
+5. If the user asks to schedule a session or update itinerary, append [WIDGET:ADD_ITINERARY] at the end of your response text.
+6. Return a JSON object with NO markdown formatting matching this exact schema:
 {
   "response": "<your warm, professional, markdown-formatted conversational response>",
   "updateEvent": {
@@ -393,7 +446,7 @@ INSTRUCTIONS:
     "aestheticTheme": "<updated theme or empty>",
     "targetGuestCount": <number of target guests as int, or 0>
   }
-}`, evt.Title, evt.EventType, evt.Date, evt.Venue, evt.HostNames, evt.AestheticTheme, evt.TargetGuestCount, userMsg)
+}`, evt.Title, evt.EventType, evt.Date, evt.Venue, evt.HostNames, evt.AestheticTheme, evt.TargetGuestCount, guestStr, itinStr, userMsg, evt.TargetGuestCount, len(guests), confirmedCount)
 
 	reqBody := map[string]interface{}{
 		"contents": []map[string]interface{}{
@@ -574,7 +627,7 @@ func runFallbackAssistant(msg string, s *store.DataStore) (AssistantOutput, erro
 	}
 
 	// 4. /generate-invitation or Generate Invitation
-	if msgLower == "/generate-invitation" || strings.Contains(msgLower, "generate invitation") || strings.Contains(msgLower, "create invitation") {
+	if msgLower == "/generate-invitation" || strings.Contains(msgLower, "generate invitation") || strings.Contains(msgLower, "create invitation") || strings.Contains(msgLower, "design invitation") || strings.Contains(msgLower, "design a invitation") || strings.Contains(msgLower, "design an invitation") || ((strings.Contains(msgLower, "invitation") || strings.Contains(msgLower, "invite") || strings.Contains(msgLower, "card")) && (strings.Contains(msgLower, "design") || strings.Contains(msgLower, "create") || strings.Contains(msgLower, "make") || strings.Contains(msgLower, "want") || strings.Contains(msgLower, "like"))) {
 		toolsCalled = append(toolsCalled, "createInvitationSpec")
 		resp := "🎨 Here is your Quick Generate Invitation component widget:\n\n[WIDGET:GENERATE_INVITATION]"
 		return AssistantOutput{Response: resp, ToolsCalled: toolsCalled}, nil

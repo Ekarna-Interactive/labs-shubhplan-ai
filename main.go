@@ -17,6 +17,9 @@ import (
 //go:embed all:web
 var webFS embed.FS
 
+//go:embed prompts/*.prompt
+var promptFS embed.FS
+
 func main() {
 	defaultPort := 3000
 	if envPort := os.Getenv("PORT"); envPort != "" {
@@ -32,7 +35,7 @@ func main() {
 	defer stop()
 
 	log.Println("[Shubh Plan Web] Booting independent Genkit Go + Web UI application...")
-	srv := server.NewServer(*portFlag, webFS)
+	srv := server.NewServer(*portFlag, webFS, promptFS)
 
 	go func() {
 		if err := srv.Start(ctx); err != nil && err != http.ErrServerClosed {

@@ -15,11 +15,12 @@ import (
 
 // Dummy embed.FS for testing
 var dummyWebFS embed.FS
+var dummyPromptFS embed.FS
 
 func setupTestServer(t *testing.T) *Server {
 	t.Helper()
 	os.Setenv("SHUBH_DATA_DIR", t.TempDir())
-	return NewServer(0, dummyWebFS)
+	return NewServer(0, dummyWebFS, dummyPromptFS)
 }
 
 func TestHealthCheckEndpoint(t *testing.T) {
