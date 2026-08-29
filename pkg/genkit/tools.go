@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -82,6 +83,14 @@ type GenerateImageOutput struct {
 type SearchVenueInput struct {
 	VenueName string `json:"venueName" jsonschema:"description=Name of hotel, resort, banquet hall, or venue (e.g. Hyatt Regency, Taj Mahal Palace)"`
 	City      string `json:"city,omitempty" jsonschema:"description=City or region where venue is located (e.g. Mumbai, Bengaluru, Goa)"`
+}
+
+type DeleteInput struct {
+	ID string `json:"id" jsonschema:"description=The unique ID of the entity to delete"`
+}
+
+type ToggleRSVPInput struct {
+	ID string `json:"id" jsonschema:"description=The unique ID of the guest"`
 }
 
 // RegisterTools defines and registers all domain tools with Genkit.
@@ -233,6 +242,66 @@ func RegisterTools(g *genkit.Genkit, s *store.DataStore) map[string]ai.Tool {
 	)
 	tools["generateInvitationImage"] = generateImageTool
 
+	// Tool 10: Delete Guest
+	deleteGuestTool := genkit.DefineTool(g, "deleteGuest",
+		"Deletes a guest from the event roster by guest ID.",
+		func(ctx *ai.ToolContext, input DeleteInput) (bool, error) {
+			return s.DeleteGuest(input.ID), nil
+		},
+	)
+	tools["deleteGuest"] = deleteGuestTool
+
+	// Tool 11: Toggle Guest RSVP
+	toggleRSVPTool := genkit.DefineTool(g, "toggleGuestRSVP",
+		"Toggles or cycles a guest's RSVP status (Confirmed -> Declined -> Pending -> Confirmed).",
+		func(ctx *ai.ToolContext, input ToggleRSVPInput) (store.Guest, error) {
+			gst, _ := s.ToggleGuestRSVP(input.ID)
+			return gst, nil
+		},
+	)
+	tools["toggleGuestRSVP"] = toggleRSVPTool
+
+	// Tool 12: List Designs
+	listDesignsTool := genkit.DefineTool(g, "listDesigns",
+		"Retrieves all saved invitation card artwork concepts from the design studio.",
+		func(ctx *ai.ToolContext, _ struct{}) ([]store.InvitationDesign, error) {
+			return s.ListDesigns(), nil
+		},
+	)
+	tools["listDesigns"] = listDesignsTool
+
+	// Tool 13: Delete Design
+	deleteDesignTool := genkit.DefineTool(g, "deleteDesign",
+		"Deletes a saved invitation card concept by design ID.",
+		func(ctx *ai.ToolContext, input DeleteInput) (bool, error) {
+			return s.DeleteDesign(input.ID), nil
+		},
+	)
+	tools["deleteDesign"] = deleteDesignTool
+
+	// Tool 14: Export Event Data
+	exportDataTool := genkit.DefineTool(g, "exportEventData",
+		"Exports the complete event workspace profile, guest roster, itinerary, and artwork concepts as formatted JSON string.",
+		func(ctx *ai.ToolContext, _ struct{}) (string, error) {
+			bytes, err := s.ExportJSON()
+			if err != nil {
+				return "", err
+			}
+			return string(bytes), nil
+		},
+	)
+	tools["exportEventData"] = exportDataTool
+
+	// Tool 15: Reset Event Workspace
+	resetStoreTool := genkit.DefineTool(g, "resetEventWorkspace",
+		"Clears and resets the entire event profile, guest roster, itinerary, and design concepts.",
+		func(ctx *ai.ToolContext, _ struct{}) (string, error) {
+			s.ClearStore()
+			return "Event workspace cleared successfully.", nil
+		},
+	)
+	tools["resetEventWorkspace"] = resetStoreTool
+
 	return tools
 }
 
@@ -340,9 +409,16 @@ func generateImageWithAPI(ctx context.Context, prompt, style, aspectRatio string
 	pngFilename := fmt.Sprintf("%s.png", assetID)
 	imageRelURL := fmt.Sprintf("/assets/%s", pngFilename)
 	fullImageURL := fmt.Sprintf("http://localhost:3000/assets/%s", pngFilename)
-	outPath := fmt.Sprintf("./web/assets/%s", pngFilename)
-
+	dataDir := strings.TrimSpace(os.Getenv("SHUBH_DATA_DIR"))
+	if dataDir == "" {
+		dataDir = "./data"
+	}
+	persistentAssetDir := filepath.Join(dataDir, "assets")
+	_ = os.MkdirAll(persistentAssetDir, 0755)
 	_ = os.MkdirAll("./web/assets", 0755)
+
+	persistentOutPath := filepath.Join(persistentAssetDir, pngFilename)
+	localOutPath := fmt.Sprintf("./web/assets/%s", pngFilename)
 
 	evt := s.GetEvent()
 	titleStr := evt.Title
@@ -384,11 +460,12 @@ func generateImageWithAPI(ctx context.Context, prompt, style, aspectRatio string
 		imgBytes = renderPNGCard(titleStr, dateStr, venueStr, style, prompt, aspectRatio)
 	}
 
-	// Always write physical PNG asset to disk
-	if err := os.WriteFile(outPath, imgBytes, 0644); err != nil {
-		log.Printf("[Image Generator Error] Failed writing PNG card asset to %s: %v", outPath, err)
+	// Always write physical PNG asset to persistent data store and local web assets
+	_ = os.WriteFile(persistentOutPath, imgBytes, 0644)
+	if err := os.WriteFile(localOutPath, imgBytes, 0644); err != nil {
+		log.Printf("[Image Generator Warning] Writing local PNG asset: %v", err)
 	} else {
-		log.Printf("[Image Generator Success] Saved PNG card asset to %s (URL: %s, Size: %d bytes)", outPath, imageRelURL, len(imgBytes))
+		log.Printf("[Image Generator Success] Saved PNG card asset to %s and %s (URL: %s, Size: %d bytes)", persistentOutPath, localOutPath, imageRelURL, len(imgBytes))
 	}
 
 	// Save design to store with generated image URL

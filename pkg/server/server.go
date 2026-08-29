@@ -31,9 +31,9 @@ type Server struct {
 	webFS  embed.FS
 }
 
-func NewServer(port int, webFS embed.FS) *Server {
+func NewServer(port int, webFS embed.FS, promptFS embed.FS) *Server {
 	dataStore := store.GetStore()
-	engine := genkitengine.InitEngine(context.Background())
+	engine := genkitengine.InitEngine(context.Background(), promptFS)
 	tools := genkitengine.RegisterTools(engine.Genkit, dataStore)
 	agents := genkitengine.RegisterAgents(engine, dataStore, tools)
 	flows := genkitengine.RegisterFlows(engine, dataStore, tools, agents)
@@ -68,11 +68,23 @@ func (s *Server) Start(ctx context.Context) error {
 		w.Header().Set("Pragma", "no-cache")
 		w.Header().Set("Expires", "0")
 
-		// Try loading static asset directly from local ./web directory first
 		cleanPath := filepath.Clean(r.URL.Path)
 		if cleanPath == "\\" || cleanPath == "/" {
 			cleanPath = "/index.html"
 		}
+
+		// 1. Try loading asset directly from persistent SHUBH_DATA_DIR volume mount first
+		dataDir := strings.TrimSpace(os.Getenv("SHUBH_DATA_DIR"))
+		if dataDir == "" {
+			dataDir = "./data"
+		}
+		persistentAssetPath := filepath.Join(dataDir, filepath.FromSlash(cleanPath))
+		if stat, statErr := os.Stat(persistentAssetPath); statErr == nil && !stat.IsDir() {
+			http.ServeFile(w, r, persistentAssetPath)
+			return
+		}
+
+		// 2. Try loading static asset directly from local ./web directory
 		localDiskPath := filepath.Join(".", "web", filepath.FromSlash(cleanPath))
 		if stat, statErr := os.Stat(localDiskPath); statErr == nil && !stat.IsDir() {
 			http.ServeFile(w, r, localDiskPath)
