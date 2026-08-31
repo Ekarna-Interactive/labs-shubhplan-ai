@@ -167,16 +167,16 @@ func (s *DataStore) loadDisk() {
 			HostNames:        "Surya & Ananya",
 			Date:             "2026-10-12",
 			Venue:            "Marhaba Mini Function Hall",
-			Location:         "Vadapalani, Chennai",
+			Location:         "Ashok Nagar, Chennai",
 			AestheticTheme:   "South Indian Traditional",
 			Description:      "Traditional Naming Ceremony (Namkaran) celebration for baby Aarav.",
 			TargetGuestCount: 150,
 			VenueDetails: VenueDetails{
 				PrimaryVenue:           "Marhaba Mini Function Hall",
-				VenueFormattedAddress:  "60/2, 2nd St, Sarvamangala Colony, Aruna Colony, Vadapalani, Chennai, Tamil Nadu 600026",
-				Address:                "Vadapalani, Chennai",
-				GoogleMapURL:           "https://maps.google.com/?q=Marhaba+Mini+Function+Hall+Vadapalani+Chennai",
-				GoogleMapDirectionsURL: "https://maps.google.com/maps?daddr=Marhaba+Mini+Function+Hall+Vadapalani+Chennai",
+				VenueFormattedAddress:  "60/2, 2nd St, Sarvamangala Colony, Aruna Colony, Ashok Nagar, Chennai, Tamil Nadu 600083, India",
+				Address:                "Ashok Nagar, Chennai",
+				GoogleMapURL:           "https://maps.google.com/?q=Marhaba+Mini+Function+Hall+Ashok+Nagar+Chennai",
+				GoogleMapDirectionsURL: "https://maps.google.com/maps?daddr=Marhaba+Mini+Function+Hall+Ashok+Nagar+Chennai",
 				VenuePhotoURL:          "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=800&q=80",
 			},
 		}
@@ -254,6 +254,9 @@ func (s *DataStore) UpdateEvent(profile EventProfile) EventProfile {
 	}
 	if profile.VenueDetails.PrimaryVenue != "" || profile.VenueDetails.PlaceID != "" {
 		s.event.VenueDetails = profile.VenueDetails
+		if profile.Location == "" && profile.VenueDetails.Address != "" {
+			s.event.Location = profile.VenueDetails.Address
+		}
 	}
 	if profile.AestheticTheme != "" {
 		s.event.AestheticTheme = profile.AestheticTheme

@@ -79,8 +79,10 @@
       </div>
     </header>
 
-    <!-- Main Navigation Tabs -->
-    <nav class="tab-bar">
+    <!-- Dashboard Container (Gated by Auth) -->
+    <div id="dashboard-container" class="dashboard-container hidden">
+      <!-- Main Navigation Tabs -->
+      <nav class="tab-bar">
       <button class="tab-btn active" data-tab="tab-copilot" id="tab-btn-copilot">
         <span class="tab-icon">💬</span>
         <span>AI Assistant</span>
@@ -491,6 +493,7 @@
         </div>
       </section>
     </main>
+    </div> <!-- End Dashboard Container -->
 
     <!-- Modals -->
     <!-- Auth Modal -->
@@ -598,16 +601,16 @@
             <div class="form-group col">
               <label for="profile-type-input" class="form-label-bold">Event Type</label>
               <select id="profile-type-input" class="form-control" required>
-                <option value="Naming Ceremony">Naming Ceremony (Namkaran)</option>
-                <option value="Wedding Celebration">Wedding Celebration (Vivaha)</option>
-                <option value="Engagement Ceremony">Engagement / Ring Ceremony</option>
-                <option value="Birthday Celebration">Birthday Celebration</option>
-                <option value="Anniversary Gala">Anniversary Gala</option>
-                <option value="Baby Shower">Baby Shower (Seemantham / Godh Bharai)</option>
-                <option value="Housewarming Ceremony">Housewarming Ceremony (Griha Pravesh)</option>
-                <option value="Corporate Gala & Event">Corporate Gala & Event</option>
-                <option value="Cultural Fest & Concert">Cultural Fest & Concert</option>
-                <option value="Other Special Event">Other Special Event</option>
+                <option value="Naming Ceremony">🍼 Naming Ceremony (Namkaran)</option>
+                <option value="Wedding Celebration">💍 Wedding Celebration (Vivaha)</option>
+                <option value="Engagement Ceremony">💎 Engagement / Ring Ceremony</option>
+                <option value="Birthday Celebration">🎂 Birthday Celebration</option>
+                <option value="Anniversary Gala">🥂 Anniversary Gala</option>
+                <option value="Baby Shower">👶 Baby Shower (Seemantham / Godh Bharai)</option>
+                <option value="Housewarming Ceremony">🏡 Housewarming Ceremony (Griha Pravesh)</option>
+                <option value="Corporate Gala & Event">💼 Corporate Gala & Event</option>
+                <option value="Cultural Fest & Concert">🎭 Cultural Fest & Concert</option>
+                <option value="Other Special Event">✨ Other Special Event</option>
               </select>
             </div>
           </div>
@@ -635,24 +638,24 @@
             <div class="form-group col">
               <label for="profile-theme-input" class="form-label-bold">Aesthetic Theme</label>
               <select id="profile-theme-input" class="form-control">
-                <option value="South Indian Traditional">South Indian Traditional</option>
-                <option value="Royal Rajputana Palace">Royal Rajputana Palace</option>
-                <option value="Modern Minimalist Pastel">Modern Minimalist Pastel</option>
-                <option value="Clay 3D Festivity">Clay 3D Festivity</option>
-                <option value="Bollywood Retro Glam">Bollywood Retro Glam</option>
-                <option value="Boho Floral Chic">Boho Floral Chic</option>
-                <option value="Golden Marigold Celebration">Golden Marigold Celebration</option>
+                <option value="South Indian Traditional">🛕 South Indian Traditional</option>
+                <option value="Royal Rajputana Palace">👑 Royal Rajputana Palace</option>
+                <option value="Modern Minimalist Pastel">🎨 Modern Minimalist Pastel</option>
+                <option value="Clay 3D Festivity">🏺 Clay 3D Festivity</option>
+                <option value="Bollywood Retro Glam">🪩 Bollywood Retro Glam</option>
+                <option value="Boho Floral Chic">🌿 Boho Floral Chic</option>
+                <option value="Golden Marigold Celebration">🌼 Golden Marigold Celebration</option>
               </select>
             </div>
             <div class="form-group col">
               <label for="profile-guests-input" class="form-label-bold">Target Guest Count</label>
               <select id="profile-guests-input" class="form-control">
-                <option value="50">50 Guests (Intimate Gathering)</option>
-                <option value="100">100 Guests (Classic Celebration)</option>
-                <option value="150">150 Guests (Standard Function)</option>
-                <option value="250">250 Guests (Grand Event)</option>
-                <option value="500">500 Guests (Mega Celebration)</option>
-                <option value="1000">1,000+ Guests (Royal Banquet)</option>
+                <option value="50">👥 50 Guests (Intimate Gathering)</option>
+                <option value="100">👨‍👩‍👧‍👦 100 Guests (Classic Celebration)</option>
+                <option value="150">🎉 150 Guests (Standard Function)</option>
+                <option value="250">🏰 250 Guests (Grand Event)</option>
+                <option value="500">🌟 500 Guests (Mega Celebration)</option>
+                <option value="1000">👑 1,000+ Guests (Royal Banquet)</option>
               </select>
             </div>
           </div>

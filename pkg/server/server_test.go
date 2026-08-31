@@ -9,6 +9,7 @@ import (
 	"os"
 	"testing"
 
+	"shubh-plan-web/pkg/auth"
 	"shubh-plan-web/pkg/middleware"
 	"shubh-plan-web/pkg/store"
 )
@@ -69,6 +70,7 @@ func TestGetModeEndpoint(t *testing.T) {
 
 func TestDomainRESTEndpoints(t *testing.T) {
 	srv := setupTestServer(t)
+	sess := auth.GetAuthManager().CreateGuestDemoSession()
 
 	// Build handler mux wrapped in middleware
 	mux := http.NewServeMux()
@@ -80,16 +82,26 @@ func TestDomainRESTEndpoints(t *testing.T) {
 
 	handler := middleware.Chain(mux, middleware.CORSMiddleware)
 
-	// 1. GET /api/event
+	// Unauthenticated test should fail with 401
+	reqUnauth := httptest.NewRequest(http.MethodGet, "/api/event", nil)
+	rrUnauth := httptest.NewRecorder()
+	handler.ServeHTTP(rrUnauth, reqUnauth)
+	if rrUnauth.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 Unauthorized for unauthenticated GET /api/event, got %d", rrUnauth.Code)
+	}
+
+	// 1. GET /api/event authenticated
 	reqEvt := httptest.NewRequest(http.MethodGet, "/api/event", nil)
+	reqEvt.Header.Set("X-Session-ID", sess.Token)
 	rrEvt := httptest.NewRecorder()
 	handler.ServeHTTP(rrEvt, reqEvt)
 	if rrEvt.Code != http.StatusOK {
 		t.Fatalf("expected 200 OK on GET /api/event, got %d", rrEvt.Code)
 	}
 
-	// 2. GET /api/guests
+	// 2. GET /api/guests authenticated
 	reqGst := httptest.NewRequest(http.MethodGet, "/api/guests", nil)
+	reqGst.Header.Set("X-Session-ID", sess.Token)
 	rrGst := httptest.NewRecorder()
 	handler.ServeHTTP(rrGst, reqGst)
 	if rrGst.Code != http.StatusOK {
@@ -107,6 +119,7 @@ func TestDomainRESTEndpoints(t *testing.T) {
 
 func TestDeleteDesignEndpoint(t *testing.T) {
 	srv := setupTestServer(t)
+	sess := auth.GetAuthManager().CreateGuestDemoSession()
 
 	d1 := srv.store.AddDesign(store.InvitationDesign{Headline: "Test Design"})
 
@@ -114,6 +127,7 @@ func TestDeleteDesignEndpoint(t *testing.T) {
 	mux.HandleFunc("DELETE /api/designs", srv.handleDeleteDesign)
 
 	req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/designs?id=%s", d1.ID), nil)
+	req.Header.Set("X-Session-ID", sess.Token)
 	rr := httptest.NewRecorder()
 	mux.ServeHTTP(rr, req)
 

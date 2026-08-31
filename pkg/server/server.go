@@ -128,6 +128,7 @@ func (s *Server) Start(ctx context.Context) error {
 	// 4. REST Domain Endpoints
 	mux.HandleFunc("GET /api/event", s.handleGetEvent)
 	mux.HandleFunc("POST /api/event", s.handleUpdateEvent)
+	mux.HandleFunc("GET /api/venue/search", s.handleSearchVenue)
 	mux.HandleFunc("GET /api/guests", s.handleListGuests)
 	mux.HandleFunc("POST /api/guests", s.handleAddOrUpdateGuest)
 	mux.HandleFunc("POST /api/guests/{id}/rsvp", s.handleToggleRSVP)
@@ -186,12 +187,39 @@ func (s *Server) isHTMX(r *http.Request) bool {
 	return r.Header.Get("HX-Request") == "true" || strings.Contains(r.Header.Get("Accept"), "text/html")
 }
 
+func (s *Server) requireAuth(w http.ResponseWriter, r *http.Request) bool {
+	userID, _ := r.Context().Value(middleware.UserIDKey).(string)
+	if userID == "" {
+		token := ""
+		if cookie, err := r.Cookie("shubh_session"); err == nil {
+			token = cookie.Value
+		}
+		if token == "" {
+			token = r.Header.Get("X-Session-ID")
+		}
+		if token != "" {
+			if _, ok := auth.GetAuthManager().GetSession(token); ok {
+				return true
+			}
+		}
+		http.Error(w, `{"error":"Unauthorized","message":"Authentication required"}`, http.StatusUnauthorized)
+		return false
+	}
+	return true
+}
+
 func (s *Server) handleGetEvent(w http.ResponseWriter, r *http.Request) {
+	if !s.requireAuth(w, r) {
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(s.store.GetEvent())
 }
 
 func (s *Server) handleUpdateEvent(w http.ResponseWriter, r *http.Request) {
+	if !s.requireAuth(w, r) {
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	var profile store.EventProfile
 	if err := json.NewDecoder(r.Body).Decode(&profile); err != nil {
@@ -202,12 +230,37 @@ func (s *Server) handleUpdateEvent(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(updated)
 }
 
+func (s *Server) handleSearchVenue(w http.ResponseWriter, r *http.Request) {
+	if !s.requireAuth(w, r) {
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	query := strings.TrimSpace(r.URL.Query().Get("query"))
+	if query == "" {
+		http.Error(w, `{"error":"Query parameter required"}`, http.StatusBadRequest)
+		return
+	}
+
+	vd := genkitengine.VerifyVenueWithGoogleMaps(r.Context(), query, "")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":  "success",
+		"query":   query,
+		"results": []store.VenueDetails{vd},
+	})
+}
+
 func (s *Server) handleListGuests(w http.ResponseWriter, r *http.Request) {
+	if !s.requireAuth(w, r) {
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(s.store.ListGuests())
 }
 
 func (s *Server) handleAddOrUpdateGuest(w http.ResponseWriter, r *http.Request) {
+	if !s.requireAuth(w, r) {
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	var guest store.Guest
 	if err := json.NewDecoder(r.Body).Decode(&guest); err != nil {
@@ -219,6 +272,9 @@ func (s *Server) handleAddOrUpdateGuest(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *Server) handleToggleRSVP(w http.ResponseWriter, r *http.Request) {
+	if !s.requireAuth(w, r) {
+		return
+	}
 	id := r.PathValue("id")
 	guest, exists := s.store.ToggleGuestRSVP(id)
 	if !exists {
@@ -230,6 +286,9 @@ func (s *Server) handleToggleRSVP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleDeleteGuest(w http.ResponseWriter, r *http.Request) {
+	if !s.requireAuth(w, r) {
+		return
+	}
 	id := r.PathValue("id")
 	s.store.DeleteGuest(id)
 	w.Header().Set("Content-Type", "application/json")
@@ -237,11 +296,17 @@ func (s *Server) handleDeleteGuest(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleListItinerary(w http.ResponseWriter, r *http.Request) {
+	if !s.requireAuth(w, r) {
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(s.store.ListItinerary())
 }
 
 func (s *Server) handleAddItineraryItem(w http.ResponseWriter, r *http.Request) {
+	if !s.requireAuth(w, r) {
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	var item store.ItineraryItem
 	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
@@ -253,6 +318,9 @@ func (s *Server) handleAddItineraryItem(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *Server) handleListDesigns(w http.ResponseWriter, r *http.Request) {
+	if !s.requireAuth(w, r) {
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(s.store.ListDesigns())
 }
@@ -348,6 +416,9 @@ func (s *Server) handleCreateDesign(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleDeleteDesign(w http.ResponseWriter, r *http.Request) {
+	if !s.requireAuth(w, r) {
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	id := strings.TrimSpace(r.URL.Query().Get("id"))
 	if id == "" {

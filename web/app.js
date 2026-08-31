@@ -54,8 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initRoster();
   initItinerary();
 
-  // Initial Load
-  loadAllData();
+  // Note: loadAllData is triggered after authentication completes in updateUserUI()
 
   // ---------------------------------------------------------------------------
   // 1. Operating Modes & Authentication Controller
@@ -80,10 +79,13 @@ document.addEventListener('DOMContentLoaded', () => {
         state.user = await meRes.json();
         updateUserUI();
       } else {
+        state.user = null;
         updateUserUI();
       }
     } catch (e) {
       console.warn('Auth check error:', e);
+      state.user = null;
+      updateUserUI();
     }
 
     const authModal = document.getElementById('auth-modal');
@@ -146,7 +148,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (closeAuthBtn && authModal) {
-      closeAuthBtn.addEventListener('click', () => authModal.classList.remove('open'));
+      closeAuthBtn.addEventListener('click', () => {
+        if (state.user) {
+          authModal.classList.remove('open');
+        }
+      });
     }
 
     if (fillDemoBtn) {
@@ -192,8 +198,6 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('shubh_session_token', data.session.token);
             state.user = data.session;
             updateUserUI();
-            if (authModal) authModal.classList.remove('open');
-            loadAllData();
           } else {
             if (errBox) {
               errBox.textContent = data.error || 'Login failed.';
@@ -229,8 +233,6 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('shubh_session_token', data.session.token);
             state.user = data.session;
             updateUserUI();
-            if (authModal) authModal.classList.remove('open');
-            loadAllData();
           } else {
             if (errBox) {
               errBox.textContent = data.error || 'Account creation failed.';
@@ -255,8 +257,6 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('shubh_session_token', data.session.token);
             state.user = data.session;
             updateUserUI();
-            if (authModal) authModal.classList.remove('open');
-            loadAllData();
           }
         } catch (err) {
           console.error('Guest demo error:', err);
@@ -273,7 +273,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     localStorage.removeItem('shubh_session_token');
     state.user = null;
+    state.event = null;
+    state.guests = [];
+    state.itinerary = [];
+    state.designs = [];
     updateUserUI();
+  }
+
+  function checkAndPromptAPIKeyIfNeeded() {
+    const hasClientKey = !!localStorage.getItem('shubh_gemini_api_key');
+    if (!hasClientKey && !state.hasServerAPIKey) {
+      const apikeyModal = document.getElementById('apikey-modal');
+      const keyInput = document.getElementById('user-gemini-key-input');
+      const mapsInput = document.getElementById('user-maps-key-input');
+      if (keyInput) keyInput.value = localStorage.getItem('shubh_gemini_api_key') || '';
+      if (mapsInput) mapsInput.value = localStorage.getItem('shubh_maps_api_key') || '';
+      const msg = document.getElementById('key-status-msg');
+      if (msg) {
+        msg.textContent = '⚠️ Please provide a Gemini API Key to enable AI features.';
+        msg.className = 'key-status-msg warning';
+        msg.classList.remove('hidden');
+      }
+      if (apikeyModal) apikeyModal.classList.add('open');
+    }
   }
 
   function updateUserUI() {
@@ -282,6 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeAuthBtn = document.getElementById('close-auth-modal-btn');
     const dropEmail = document.getElementById('dropdown-user-email');
     const dropRole = document.getElementById('dropdown-user-role');
+    const dashboardContainer = document.getElementById('dashboard-container');
 
     if (state.user) {
       const email = state.user.userEmail || state.user.email || 'User';
@@ -293,11 +316,22 @@ document.addEventListener('DOMContentLoaded', () => {
       if (dropRole) dropRole.textContent = `Role: ${role.toUpperCase()}`;
 
       if (authModal) authModal.classList.remove('open');
-      if (closeAuthBtn) closeAuthBtn.classList.remove('hidden');
+      if (closeAuthBtn) {
+        closeAuthBtn.classList.remove('hidden');
+        closeAuthBtn.style.display = '';
+      }
+      if (dashboardContainer) dashboardContainer.classList.remove('hidden');
+
+      loadAllData();
+      checkAndPromptAPIKeyIfNeeded();
     } else {
       if (authText) authText.textContent = 'Sign Up / Login';
       if (authModal) authModal.classList.add('open');
-      if (closeAuthBtn) closeAuthBtn.classList.add('hidden');
+      if (closeAuthBtn) {
+        closeAuthBtn.classList.add('hidden');
+        closeAuthBtn.style.display = 'none';
+      }
+      if (dashboardContainer) dashboardContainer.classList.add('hidden');
     }
   }
 
@@ -1609,7 +1643,11 @@ document.addEventListener('DOMContentLoaded', () => {
     html = html
       .replace(/\[WIDGET:ADD_GUEST\]/g, '<div class="widget-mount-add-guest"></div>')
       .replace(/\[WIDGET:GENERATE_INVITATION\]/g, '<div class="widget-mount-generate-invitation"></div>')
-      .replace(/\[WIDGET:ADD_ITINERARY\]/g, '<div class="widget-mount-schedule-session"></div>');
+      .replace(/\[WIDGET:ADD_ITINERARY\]/g, '<div class="widget-mount-schedule-session"></div>')
+      .replace(/\[WIDGET:SELECT_VENUE:(.*?)\]/g, (match, query) => {
+        const cleanQuery = query.replace(/&amp;/g, '&');
+        return `<div class="widget-mount-select-venue" data-query="${cleanQuery}"></div>`;
+      });
 
     html = html.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, url) => {
       const cleanUrl = url.replace(/&amp;/g, '&');

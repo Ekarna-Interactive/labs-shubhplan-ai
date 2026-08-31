@@ -509,7 +509,118 @@ window.ChatWidgets = (function () {
   }
 
   // ---------------------------------------------------------------------------
-  // 4. Component Mount Helper
+  // 4. Venue Confirmation Component Widget
+  // ---------------------------------------------------------------------------
+  function renderSelectVenue(container, callbacks) {
+    if (!container) return;
+    const query = container.getAttribute('data-query') || container.getAttribute('data-venue-query') || '';
+    const widgetId = 'widget-venue-' + Math.random().toString(36).substr(2, 9);
+
+    container.innerHTML = `
+      <div class="chat-widget-card glass-card" id="${widgetId}">
+        <div class="chat-widget-header">
+          <span class="chat-widget-icon">📍</span>
+          <div>
+            <h4 class="chat-widget-title">Confirm Venue Location</h4>
+            <p class="chat-widget-sub">Review matching Google Places options and confirm venue selection</p>
+          </div>
+        </div>
+
+        <div class="widget-venue-results" style="margin-top: 10px;">
+          <div class="venue-search-loading" style="font-size: 0.85rem; color: #94a3b8; padding: 12px; text-align: center;">
+            <span class="typing-indicator" style="display:inline-flex; gap:3px; margin-right:6px;"><span></span><span></span><span></span></span>
+            <span>Searching Google Places for "${escapeHtml(query)}"...</span>
+          </div>
+        </div>
+
+        <div class="widget-status-msg hidden" style="margin-top:10px; font-size:0.85rem; font-weight:600; text-align:center;"></div>
+      </div>
+    `;
+
+    const widget = document.getElementById(widgetId);
+    if (!widget) return;
+
+    const resultsBox = widget.querySelector('.widget-venue-results');
+    const statusMsg = widget.querySelector('.widget-status-msg');
+
+    fetch(`/api/venue/search?query=${encodeURIComponent(query)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (!data || !data.results || data.results.length === 0) {
+          resultsBox.innerHTML = `<p style="font-size: 0.85rem; color: #f87171; text-align:center; padding:8px;">⚠️ No Google Places location found matching "${escapeHtml(query)}".</p>`;
+          return;
+        }
+
+        resultsBox.innerHTML = data.results.map((vd, idx) => `
+          <div class="venue-option-card" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 12px; margin-bottom: 10px;">
+            ${vd.venue_photo_url ? `
+              <div style="height: 120px; overflow: hidden; border-radius: 8px; margin-bottom: 10px;">
+                <img src="${escapeHtml(vd.venue_photo_url)}" alt="${escapeHtml(vd.primary_venue)}" style="width: 100%; height: 100%; object-fit: cover;">
+              </div>
+            ` : ''}
+            <h5 style="font-size: 0.95rem; font-weight: 700; color: #f8fafc; margin-bottom: 4px;">${escapeHtml(vd.primary_venue || query)}</h5>
+            <p style="font-size: 0.82rem; color: #94a3b8; margin-bottom: 8px; line-height: 1.4;">📍 ${escapeHtml(vd.venue_formatted_address || vd.address)}</p>
+            <div style="display: flex; gap: 8px; align-items: center; justify-content: space-between;">
+              ${vd.google_map_url ? `<a href="${escapeHtml(vd.google_map_url)}" target="_blank" class="btn btn-sm btn-outline" style="font-size:0.75rem; padding: 4px 8px;">🗺️ View Map</a>` : '<span></span>'}
+              <button type="button" class="btn btn-sm btn-accent widget-confirm-venue-btn" data-venue="${escapeHtml(vd.primary_venue)}" data-location="${escapeHtml(vd.address)}" data-details='${escapeHtml(JSON.stringify(vd))}'>
+                ✅ Confirm & Set Venue
+              </button>
+            </div>
+          </div>
+        `).join('');
+
+        resultsBox.querySelectorAll('.widget-confirm-venue-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const venueName = btn.getAttribute('data-venue');
+            const locName = btn.getAttribute('data-location');
+            let venueDetailsObj = {};
+            try {
+              venueDetailsObj = JSON.parse(btn.getAttribute('data-details'));
+            } catch (e) {}
+
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Setting Venue...';
+
+            try {
+              const postRes = await fetch('/api/event', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  venue: venueName,
+                  location: locName,
+                  venueDetails: venueDetailsObj
+                })
+              });
+
+              if (postRes.ok) {
+                resultsBox.style.display = 'none';
+                statusMsg.className = 'widget-status-msg text-success';
+                statusMsg.innerHTML = `🎉 Confirmed! Event venue set to <strong>${escapeHtml(venueName)}</strong> (<em>${escapeHtml(locName)}</em>).`;
+                statusMsg.classList.remove('hidden');
+
+                if (callbacks && typeof callbacks.onSuccess === 'function') {
+                  callbacks.onSuccess('event');
+                }
+              } else {
+                throw new Error('Failed to update venue');
+              }
+            } catch (err) {
+              btn.disabled = false;
+              btn.innerHTML = '✅ Confirm & Set Venue';
+              statusMsg.className = 'widget-status-msg text-danger';
+              statusMsg.textContent = '⚠️ Error confirming venue. Please try again.';
+              statusMsg.classList.remove('hidden');
+            }
+          });
+        });
+      })
+      .catch(err => {
+        resultsBox.innerHTML = `<p style="font-size: 0.85rem; color: #f87171; text-align:center; padding:8px;">⚠️ Failed to load Google Places options.</p>`;
+      });
+  }
+
+  // ---------------------------------------------------------------------------
+  // 5. Component Mount Helper
   // ---------------------------------------------------------------------------
   function mountAll(parentContainer, callbacks) {
     if (!parentContainer) return;
@@ -537,12 +648,21 @@ window.ChatWidgets = (function () {
         renderScheduleSession(el, callbacks);
       }
     });
+
+    const venueMounts = parentContainer.querySelectorAll('.widget-mount-select-venue');
+    venueMounts.forEach(el => {
+      if (!el.hasAttribute('data-mounted')) {
+        el.setAttribute('data-mounted', 'true');
+        renderSelectVenue(el, callbacks);
+      }
+    });
   }
 
   return {
     renderAddGuest: renderAddGuest,
     renderGenerateInvitation: renderGenerateInvitation,
     renderScheduleSession: renderScheduleSession,
+    renderSelectVenue: renderSelectVenue,
     mountAll: mountAll
   };
 })();
