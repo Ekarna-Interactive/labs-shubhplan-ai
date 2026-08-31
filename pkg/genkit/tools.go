@@ -221,10 +221,10 @@ func RegisterTools(g *genkit.Genkit, s *store.DataStore) map[string]ai.Tool {
 	searchVenueTool := genkit.DefineTool(g, "searchVenueInfo",
 		"Searches and verifies a venue using Google Maps API, retrieving rich place metadata (PrimaryVenue, VenueFormattedAddress, Address, GoogleMapURL, GoogleMapDirectionsURL, VenuePhotoURL, PlaceID).",
 		func(ctx *ai.ToolContext, input SearchVenueInput) (store.VenueDetails, error) {
-			vd := verifyVenueWithGoogleMaps(ctx, input.VenueName, input.City)
+			vd := VerifyVenueWithGoogleMaps(ctx, input.VenueName, input.City)
 			s.UpdateEvent(store.EventProfile{
 				Venue:        vd.PrimaryVenue,
-				Location:     vd.VenueFormattedAddress,
+				Location:     vd.Address,
 				VenueDetails: vd,
 			})
 			return vd, nil
@@ -336,8 +336,56 @@ func resolveMapsAPIKey(ctx context.Context) string {
 	return mapsKey
 }
 
-// verifyVenueWithGoogleMaps queries Google Maps Places Text Search API to populate full VenueDetails struct.
-func verifyVenueWithGoogleMaps(ctx context.Context, venue, city string) store.VenueDetails {
+// extractCityOrLocality extracts a clean neighborhood/locality & city string (e.g. "Vettuvankeni, Chennai") from a Google Places formatted address.
+func extractCityOrLocality(formattedAddress string) string {
+	parts := strings.Split(formattedAddress, ",")
+	if len(parts) < 2 {
+		return formattedAddress
+	}
+	cleanParts := make([]string, 0, len(parts))
+	for _, p := range parts {
+		trimmed := strings.TrimSpace(p)
+		if trimmed != "" {
+			cleanParts = append(cleanParts, trimmed)
+		}
+	}
+	if len(cleanParts) == 0 {
+		return formattedAddress
+	}
+	last := cleanParts[len(cleanParts)-1]
+	if last == "India" || last == "USA" || last == "United States" || last == "UK" {
+		cleanParts = cleanParts[:len(cleanParts)-1]
+	}
+	if len(cleanParts) == 0 {
+		return formattedAddress
+	}
+	last = cleanParts[len(cleanParts)-1]
+	hasDigits := false
+	for _, r := range last {
+		if r >= '0' && r <= '9' {
+			hasDigits = true
+			break
+		}
+	}
+	if hasDigits && len(cleanParts) > 1 {
+		cleanParts = cleanParts[:len(cleanParts)-1]
+	}
+	if len(cleanParts) == 0 {
+		return formattedAddress
+	}
+	if len(cleanParts) == 1 {
+		return cleanParts[0]
+	}
+	suburb := cleanParts[len(cleanParts)-2]
+	city := cleanParts[len(cleanParts)-1]
+	if strings.EqualFold(suburb, city) {
+		return city
+	}
+	return fmt.Sprintf("%s, %s", suburb, city)
+}
+
+// VerifyVenueWithGoogleMaps queries Google Maps Places Text Search API to populate full VenueDetails struct.
+func VerifyVenueWithGoogleMaps(ctx context.Context, venue, city string) store.VenueDetails {
 	queryStr := strings.TrimSpace(fmt.Sprintf("%s, %s", venue, city))
 	if city == "" {
 		queryStr = strings.TrimSpace(venue)
@@ -380,7 +428,7 @@ func verifyVenueWithGoogleMaps(ctx context.Context, venue, city string) store.Ve
 				}
 				if res.FormattedAddress != "" {
 					vd.VenueFormattedAddress = res.FormattedAddress
-					vd.Address = res.FormattedAddress
+					vd.Address = extractCityOrLocality(res.FormattedAddress)
 					vd.VenueAdrFormatAddress = fmt.Sprintf("<span class=\"street-address\">%s</span>", res.FormattedAddress)
 				}
 				if res.PlaceID != "" {

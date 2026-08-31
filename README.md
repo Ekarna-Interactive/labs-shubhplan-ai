@@ -104,15 +104,17 @@ Open your browser and navigate to:
 - **`invitation_suggestions.prompt`**: Synthesizes 4 distinct invitation artwork prompt suggestions with structured JSON output formatting.
 - **`invitation_artwork.prompt`**: Compiles luxury visual invitation card artwork generation prompts.
 
-### 🛠️ 2. 15 Domain Genkit Tools (`pkg/genkit/tools.go`)
-Agents and Flows can invoke 15 domain execution tools:
-- **Event Logistics**: `getEventDetails`, `updateEventDetails`, `searchVenueInfo` (Google Maps Places API).
+### 🛠️ 2. Domain Genkit Tools & REST API (`pkg/genkit/tools.go`, `pkg/server/server.go`)
+Agents and Flows can invoke domain execution tools and REST endpoints:
+- **Event Logistics & Venue Search**: `getEventDetails`, `updateEventDetails`, `searchVenueInfo` (`GET /api/venue/search` via Google Maps Places API).
 - **Guest Roster**: `listGuests`, `addOrUpdateGuest`, `deleteGuest`, `toggleGuestRSVP`.
 - **Itinerary & Schedule**: `listItinerary`, `addItineraryItem`.
 - **Invitation Design Studio**: `createInvitationSpec`, `listDesigns`, `deleteDesign`, `generateInvitationImage` (`gemini-3.1-flash-image`).
 - **Workspace Administration**: `exportEventData` (JSON export), `resetEventWorkspace` (Store wipe).
 
-### 🔐 3. Dual Operating Modes & Bring Your Own Key (BYOK)
+### 🔐 3. Dual Operating Modes, Authentication Gating & API Key Prompt
+- **Dashboard Authentication Gating**: The main workspace dashboard (`#dashboard-container`) and domain REST endpoints (`/api/event`, `/api/guests`, `/api/itinerary`, `/api/designs`) are strictly gated behind session authentication (`s.requireAuth`), returning `401 Unauthorized` for unauthenticated requests.
+- **Automated Post-Auth API Key Prompt Modal**: Immediately upon login, signup, guest demo entry, or session restoration, the app inspects API key availability (`checkAndPromptAPIKeyIfNeeded()`) and automatically launches the `#apikey-modal` if Gemini API keys are missing.
 - **Demo Mode (`APP_MODE=demo`)**: Tailored for public cloud deployments (e.g. Fly.io). Users provide their own free Gemini API key and optional Google Maps Places API key in a top-bar settings modal (stored strictly in browser `localStorage`). Includes 1-click **Instant Guest Demo**.
 - **Server Mode (`APP_MODE=server`)**: Designed for local or private server usage. Automatically loads system environment variables (`GEMINI_API_KEY`, `GOOGLE_MAPS_API_KEY`) from `.env`.
 
@@ -120,15 +122,17 @@ Agents and Flows can invoke 15 domain execution tools:
 - **Enterprise-Grade Hashing**: Uses Argon2id password hashing (`$argon2id$...` with salt & key derivation) matching `apps/shubh-plan-open`.
 - **Session Security**: Supports `admin`, `planner`, and `guest` roles with secure `shubh_session` HTTP cookies and `X-Session-ID` headers.
 
-### 🎨 5. Bespoke AI Invitation Studio
+### 🎨 5. Bespoke AI Invitation Studio & Rich Celebration Selects
 - **Dynamic Aspect Ratios**: Design in `9:16` vertical poster, `4:5` portrait, `1:1` square, or `16:9` landscape.
-- **7 Signature Aesthetic Presets**: Choose from *South Indian*, *Paper Cut 3D*, *Clay 3D*, *Pop Art*, *Mughal*, *Minimalist Gold*, and *Watercolor*.
+- **7 Signature Aesthetic Presets**: Choose from *South Indian Traditional* (🛕), *Paper Cut 3D* (🏺), *Clay 3D*, *Pop Art*, *Mughal*, *Minimalist Gold*, and *Watercolor*.
+- **Rich Emojis & Visual Presets**: Styled `<select>` dropdowns for Event Type (🍼 Naming Ceremony, 💍 Wedding, 🎂 Birthday), Target Guest Count (👥 50, 👨‍👩‍👧‍👦 100, 🏰 250, 👑 1,000+), and Aesthetic Themes.
 - **High-Res PNG Card Rendering**: Renders full-resolution `.png` card artwork with 1-click download and clipboard prompt copying.
 
-### 🤖 6. AI Event Assistant, Slash Commands & Component Widgets
+### 🤖 6. AI Event Assistant, Interactive In-Chat Widgets & Venue Confirmation
 - **Conversational Setup & Real-Time SSE**: Real-time Server-Sent Events (SSE) chat for natural conversation setup with real-time `⏳ Thinking...` loading states.
 - **Interactive Quick Action Chips & Slash Commands (`/`)**: Trigger quick actions (`/summarize`, `/add-guests`, `/schedule`, `/generate-invitation`) via top chips or floating backdrop-blur autocomplete menu.
-- **Modular In-Chat Component Widgets ([`web/widgets.js`](file:///c:/Users/Gokul/Documents/Programming/Antigravity/shubh-plan/apps/shubh-plan-web/web/widgets.js))**: Self-contained 1-click HTML form components embedded inside chat bubbles (`AddGuestWidget`, `GenerateInvitationWidget`, `ScheduleSessionWidget`).
+- **Interactive In-Chat Component Widgets ([`web/widgets.js`](file:///c:/Users/Gokul/Documents/Programming/Antigravity/shubh-plan/apps/shubh-plan-web/web/widgets.js))**: Self-contained HTML form components embedded inside chat bubbles (`AddGuestWidget`, `GenerateInvitationWidget`, `ScheduleSessionWidget`, `SelectVenueWidget`).
+- **Interactive Venue Confirmation (`SelectVenueWidget`)**: When a user asks to update or set a venue, the AI Assistant returns candidate Google Places address options in an embedded chat widget, allowing the user to review full formatted addresses, locality tags, and click **"✅ Confirm & Set Venue"** to confirm the update.
 
 ---
 

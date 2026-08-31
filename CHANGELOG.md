@@ -4,6 +4,37 @@ All notable changes to the **Shubh Plan Web** project will be documented in this
 
 ---
 
+## 📦 `v0.2.0` — Security, Venue Confirmation & UI Enhancements (2026-08-31)
+
+> **Shubh Plan Web v0.2.0** introduces dashboard authentication gating, REST API session protection, interactive in-chat venue confirmation widgets powered by Google Places API, automated post-auth API key modal prompts, and rich celebration dropdown controls.
+
+### 🌟 Feature & Security Highlights
+
+#### 🔒 1. Dashboard Authentication Gating & Restful Session Enforcement
+- **Dashboard View Gating**: Wrapped navigation tabs and main content area inside `#dashboard-container`, hiding the workspace view from unauthenticated users until login, signup, or guest demo entry.
+- **REST Domain Protection**: Enforced session validation (`s.requireAuth`) on all REST domain endpoints (`/api/event`, `/api/guests`, `/api/itinerary`, `/api/designs`), returning `401 Unauthorized` for unauthenticated requests.
+- **Protected Modal Backdrop**: Hidden `close-auth-modal-btn` when unauthenticated to prevent dismissing the Auth modal without logging in.
+
+#### 🔑 2. Automated Post-Authentication API Key Prompt Modal
+- **Automated BYOK Detection**: Added `checkAndPromptAPIKeyIfNeeded()`: automatically inspects Gemini API key availability upon login, signup, guest demo entry, or session restoration.
+- **Auto-Modal Launch**: Automatically opens `#apikey-modal` with a warning message if Gemini API keys are missing.
+
+#### 📍 3. Interactive In-Chat Venue Selection Widget (`SelectVenueWidget`)
+- **Address Option Confirmation**: When a user asks the AI Assistant to enter, search, or update a venue, the AI assistant presents candidate Google Places address options in an embedded chat widget (`[WIDGET:SELECT_VENUE:<query>]`) instead of mutating store data directly.
+- **Venue Search API**: Added `GET /api/venue/search` endpoint calling `VerifyVenueWithGoogleMaps` to query Google Places Places Text Search API on demand.
+- **1-Click Venue Confirmation**: Rendered venue cards displaying primary venue name, full formatted address, locality tag, map links, and a **"✅ Confirm & Set Venue"** button that updates the store live.
+
+#### 🗺️ 4. Locality Extraction & Location Synchronization
+- **Locality Parsing Engine**: Implemented `extractCityOrLocality()` in `pkg/genkit/tools.go` to parse clean neighborhood and city strings (e.g., `"Vettuvankeni, Chennai"`, `"Ashok Nagar, Chennai"`) from Google Places formatted addresses.
+- **Automatic Location Sync**: Synchronized `EventProfile.Location` with `VenueDetails.Address` whenever a venue is updated, fixing location string mismatches across the Event Showcase card and Edit Profile modal.
+
+#### 🎨 5. Celebration Dropdown Emojis & Visual Controls
+- **Event Type Options**: Added visual icons/emojis (🍼 Naming Ceremony, 💍 Wedding, 💎 Engagement, 🎂 Birthday, 🥂 Anniversary, 👶 Baby Shower, 🏡 Housewarming, 💼 Corporate, 🎭 Cultural, ✨ Other Special Event).
+- **Target Guest Count Options**: Added headcount icons (👥 50 Guests, 👨‍👩‍👧‍👦 100 Guests, 🎉 150 Guests, 🏰 250 Guests, 🌟 500 Guests, 👑 1,000+ Guests).
+- **Aesthetic Theme Options**: Added theme icons (🛕 South Indian, 👑 Royal Rajputana Palace, 🎨 Modern Minimalist, 🏺 Clay 3D, 🪩 Bollywood Retro, 🌿 Boho Floral, 🌼 Golden Marigold).
+
+---
+
 ## 📦 `v0.1.0` — Release (2026-08-28)
 
 > **Shubh Plan Web v0.1.0** is the official release of the AI-native event planning operating system and bespoke invitation studio built on **Go 1.25+**, **Firebase Genkit Go SDK**, and **Google Gemini Cloud AI**.

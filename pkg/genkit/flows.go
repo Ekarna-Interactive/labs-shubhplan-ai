@@ -430,18 +430,19 @@ User Request: %q
 
 INSTRUCTIONS:
 1. When asked about guests or RSVPs, give exact numbers for Target Expected Guests (%d), Total Registered (%d), and Confirmed RSVPs (%d), including specific guest entries if relevant.
-2. If the user mentions event creation or event details (e.g. naming ceremony, wedding, birthday, host names, venue, date, guest count, aesthetic theme), extract those event details.
-3. If the user asks to generate/create an invitation card or design artwork, append [WIDGET:GENERATE_INVITATION] at the end of your response text.
-4. If the user asks to add guests or manage guest roster, append [WIDGET:ADD_GUEST] at the end of your response text.
-5. If the user asks to schedule a session or update itinerary, append [WIDGET:ADD_ITINERARY] at the end of your response text.
-6. Return a JSON object with NO markdown formatting matching this exact schema:
+2. If the user mentions event creation or event details (e.g. naming ceremony, wedding, birthday, host names, date, guest count, aesthetic theme), extract those event details.
+3. If the user mentions a venue or asks to set, change, search, or update the venue location, DO NOT update the venue immediately. Instead, present the venue for user confirmation by appending [WIDGET:SELECT_VENUE:<venue_query>] at the end of your response text.
+4. If the user asks to generate/create an invitation card or design artwork, append [WIDGET:GENERATE_INVITATION] at the end of your response text.
+5. If the user asks to add guests or manage guest roster, append [WIDGET:ADD_GUEST] at the end of your response text.
+6. If the user asks to schedule a session or update itinerary, append [WIDGET:ADD_ITINERARY] at the end of your response text.
+7. Return a JSON object with NO markdown formatting matching this exact schema:
 {
   "response": "<your warm, professional, markdown-formatted conversational response>",
   "updateEvent": {
     "title": "<updated title or empty>",
     "eventType": "<updated event type or empty>",
     "date": "<updated date or empty>",
-    "venue": "<updated venue or empty>",
+    "venue": "<venue query for confirmation widget or empty>",
     "hosts": "<updated host names or empty>",
     "aestheticTheme": "<updated theme or empty>",
     "targetGuestCount": <number of target guests as int, or 0>
@@ -506,7 +507,7 @@ INSTRUCTIONS:
 					}
 					if json.Unmarshal([]byte(rawText), &parsedRes) == nil && strings.TrimSpace(parsedRes.Response) != "" {
 						ue := parsedRes.UpdateEvent
-						if ue.Title != "" || ue.EventType != "" || ue.Venue != "" || ue.Hosts != "" || ue.Date != "" || ue.AestheticTheme != "" || ue.TargetGuestCount > 0 {
+						if ue.Title != "" || ue.EventType != "" || ue.Hosts != "" || ue.Date != "" || ue.AestheticTheme != "" || ue.TargetGuestCount > 0 {
 							curEvt := s.GetEvent()
 							if ue.Title != "" {
 								curEvt.Title = ue.Title
@@ -516,10 +517,6 @@ INSTRUCTIONS:
 							}
 							if ue.Date != "" {
 								curEvt.Date = ue.Date
-							}
-							if ue.Venue != "" {
-								curEvt.Venue = ue.Venue
-								curEvt.VenueDetails = verifyVenueWithGoogleMaps(ctx, ue.Venue, "")
 							}
 							if ue.Hosts != "" {
 								curEvt.HostNames = ue.Hosts
@@ -532,6 +529,12 @@ INSTRUCTIONS:
 							}
 							s.UpdateEvent(curEvt)
 						}
+
+						// If a venue update/search is requested, ensure the venue confirmation widget is mounted in chat response
+						if ue.Venue != "" && !strings.Contains(parsedRes.Response, "[WIDGET:SELECT_VENUE:") {
+							parsedRes.Response += fmt.Sprintf("\n\n[WIDGET:SELECT_VENUE:%s]", ue.Venue)
+						}
+
 						return AssistantOutput{
 							Response:    parsedRes.Response,
 							SessionID:   sessionID,
